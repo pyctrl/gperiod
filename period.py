@@ -2,7 +2,15 @@ import datetime
 import typing as t
 
 
+_F_START = "start"
+_F_END = "end"
 _T_DT_PAIR = t.Tuple[datetime.datetime, datetime.datetime]
+
+
+# TODO(d.burmistrov):
+#  - review exceptions
+#  - review Period class implementation
+#  - do performance tests
 
 
 class PeriodProto(t.Protocol):
@@ -10,11 +18,20 @@ class PeriodProto(t.Protocol):
     end: datetime.datetime
 
 
-# TODO(d.burmistrov): temporary fake period
-class Period:
+class Period(PeriodProto):
+
+    __slots__ = (_F_START, _F_END)
+
     def __init__(self, start: datetime.datetime, end: datetime.datetime):
-        self.start = start
-        self.end = end
+        object.__setattr__(self, _F_START, start)
+        object.__setattr__(self, _F_END, end)
+        # TODO(d.burmistrov): self.duration = end - start
+
+    def __setattr__(self, key, value):
+        raise NotImplementedError("method not allowed")
+
+    def __delattr__(self, item):
+        raise NotImplementedError("method not allowed")
 
 
 def join(*periods: PeriodProto,
