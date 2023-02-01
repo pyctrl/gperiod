@@ -35,6 +35,20 @@ class Period(PeriodProto):
     def __delattr__(self, item):
         raise NotImplementedError("method not allowed")
 
+    # TODO(d.burmistrov): __deepcopy__
+    def __copy__(self) -> Period:
+        return Period(self.start, self.end)  # type: ignore[abstract]
+
+    def copy(self) -> Period:
+        return Period(self.start, self.end)  # type: ignore[abstract]
+
+    def as_tuple(self) -> tuple[datetime.datetime, datetime.datetime]:
+        return self.start, self.end
+
+    # TODO(d.burmistrov): duration?
+    def as_dict(self) -> dict[str, datetime.datetime]:
+        return dict(start=self.start, end=self.end)
+
 
 def join(*periods: PeriodProto,
          flat: bool = False,
