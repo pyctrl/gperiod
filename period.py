@@ -18,13 +18,13 @@ class Period:
 
 
 def join(*periods: PeriodProto,
-         return_datetime: bool = False,
+         flat: bool = False,
          ) -> Period | _T_DT_PAIR:
     pass
 
 
 def union(*periods: PeriodProto,
-          return_datetime: bool = False,
+          flat: bool = False,
           ) -> Period | _T_DT_PAIR:
     pass
 
@@ -36,13 +36,13 @@ def split(p: PeriodProto,
 
 
 def intersection(*periods: PeriodProto,
-                 return_datetime: bool = False
+                 flat: bool = False
                  ) -> t.Optional[Period | _T_DT_PAIR]:
     pass
 
 
 def difference(p: PeriodProto,
                *periods: PeriodProto,
-               return_datetime: bool = False,
+               flat: bool = False,
                ) -> t.Generator[Period | _T_DT_PAIR, None, None]:
     pass
