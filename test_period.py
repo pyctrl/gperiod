@@ -1,3 +1,4 @@
+import copy
 import datetime
 import unittest
 
@@ -44,6 +45,75 @@ class PeriodTestCase(unittest.TestCase):
         self.assertIs(result.start, FAKE_TS_01)
         self.assertIs(result.end, FAKE_TS_02)
         self.assertIsInstance(result, period.Period)
+
+    def test_modify(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        with self.subTest(attr=period._F_START):
+            self.assertRaises(NotImplementedError,
+                              setattr,
+                              p,
+                              period._F_START,
+                              FAKE_TS_01)
+        with self.subTest(attr=period._F_END):
+            self.assertRaises(NotImplementedError,
+                              setattr,
+                              p,
+                              period._F_END,
+                              FAKE_TS_15)
+
+    def test_delete(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        with self.subTest(attr=period._F_START):
+            self.assertRaises(NotImplementedError,
+                              delattr,
+                              p,
+                              period._F_START)
+        with self.subTest(attr=period._F_END):
+            self.assertRaises(NotImplementedError,
+                              delattr,
+                              p,
+                              period._F_END)
+
+
+class PeriodConvertTestCase(unittest.TestCase):
+
+    def test_modcopy_copy(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = copy.copy(p)
+
+        self.assertIsInstance(result, period.Period)
+        self.assertIsNot(result, p)
+        self.assertEqual(result, p)
+
+    def test_copy(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = p.copy()
+
+        self.assertIsInstance(result, period.Period)
+        self.assertIsNot(result, p)
+        self.assertEqual(result, p)
+
+    def test_as_tuple(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = (p.start, p.end)
+
+        result = p.as_tuple()
+
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(result, expected)
+
+    def test_as_dict(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = dict(start=p.start, end=p.end)
+
+        result = p.as_dict()
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, expected)
 
 
 class JoinResultPeriodTestCase(unittest.TestCase):
