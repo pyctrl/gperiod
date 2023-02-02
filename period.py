@@ -40,6 +40,9 @@ class Period(PeriodProto):
     def __delattr__(self, item):
         raise NotImplementedError("method not allowed")
 
+    def __hash__(self):
+        return hash((self.start, self.end))
+
     # TODO(d.burmistrov): __deepcopy__
     def __copy__(self) -> Period:
         return Period(self.start, self.end)  # type: ignore[abstract]

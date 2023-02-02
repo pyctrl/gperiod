@@ -85,6 +85,17 @@ class PeriodTestCase(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
+    def test_hash(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p2 = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = hash((FAKE_TS_05, FAKE_TS_10))
+
+        r1 = hash(p1)
+        r2 = hash(p2)
+
+        self.assertEqual(r1, r2)
+        self.assertEqual(r1, expected)
+
 
 class PeriodConvertTestCase(unittest.TestCase):
 
