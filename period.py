@@ -30,6 +30,9 @@ class Period(PeriodProto):
         object.__setattr__(self, _F_END, end)
         # TODO(d.burmistrov): self.duration = end - start
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.start!r}, {self.end!r})"
+
     def __setattr__(self, key, value):
         raise NotImplementedError("method not allowed")
 

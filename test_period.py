@@ -76,6 +76,15 @@ class PeriodTestCase(unittest.TestCase):
                               p,
                               period._F_END)
 
+    def test_repr(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = ("Period(datetime.datetime(2019, 7, 31, 10, 0),"
+                    " datetime.datetime(2020, 1, 27, 10, 0))")
+
+        result = repr(p)
+
+        self.assertEqual(result, expected)
+
 
 class PeriodConvertTestCase(unittest.TestCase):
 
