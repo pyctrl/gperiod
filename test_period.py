@@ -125,6 +125,142 @@ class PeriodConvertTestCase(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
+class WithinDatetimeTestCase(unittest.TestCase):
+
+    def test_in(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p, FAKE_TS_10)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_border_left(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p, FAKE_TS_05)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_border_right(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p, FAKE_TS_15)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_left(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p, FAKE_TS_01)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_right(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p, FAKE_TS_20)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+
+class WithinPeriodTestCase(unittest.TestCase):
+
+    def test_in(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_08, FAKE_TS_12)
+
+        result = period.within(p1, p2)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_in_same(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_05, FAKE_TS_15)
+
+        result = period.within(p1, p2)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_in_left(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = period.within(p1, p2)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_in_right(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_10, FAKE_TS_15)
+
+        result = period.within(p1, p2)
+
+        self.assertTrue(result)
+        self.assertIsInstance(result, bool)
+
+    def test_cross_left(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_02, FAKE_TS_10)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_cross_right(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_08, FAKE_TS_20)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_left(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_01, FAKE_TS_02)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_right(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_17, FAKE_TS_20)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_touch_left(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_01, FAKE_TS_05)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+    def test_not_in_touch_right(self):
+        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p2 = period.Period(FAKE_TS_15, FAKE_TS_20)
+
+        result = period.within(p1, p2)
+
+        self.assertFalse(result)
+        self.assertIsInstance(result, bool)
+
+
 class JoinResultPeriodTestCase(unittest.TestCase):
 
     def test_empty_args(self):

@@ -14,6 +14,7 @@ _T_DT_PAIR = tuple[datetime.datetime, datetime.datetime]
 #  - review Period class implementation
 #  - do performance tests
 #  - assert `start < end`
+#  - treat `date` similar to `datetime`?
 
 
 class PeriodProto(t.Protocol):
@@ -57,6 +58,13 @@ class Period(PeriodProto):
         if not isinstance(other, Period):  # TODO(d.burmistrov): questionable
             return NotImplemented
         return self.start == other.start and self.end == other.end
+
+
+def within(p: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
+    if isinstance(item, datetime.datetime):
+        return p.start <= item <= p.end
+    else:
+        return (p.start <= item.start) and (item.end <= p.end)
 
 
 def join(*periods: PeriodProto,
