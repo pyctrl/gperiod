@@ -1,5 +1,6 @@
 import copy
 import datetime
+import operator
 import unittest
 
 import period
@@ -196,6 +197,38 @@ class PeriodOperationsTestCase(TestCase):
             self.assertIsNone(p1 | p2)
         with self.subTest(subtest="ror"):
             self.assertIsNone(p2 | p1)
+
+    def test_lshift(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
+        p = period.Period(dt2, dt4)
+        delta = datetime.timedelta(days=2)
+        expected = period.Period(dt1, dt3)
+
+        self._assert_result_period(p << delta, expected)
+
+    def test_rshift(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
+        p = period.Period(dt1, dt3)
+        delta = datetime.timedelta(days=2)
+        expected = period.Period(dt2, dt4)
+
+        self._assert_result_period(p >> delta, expected)
+
+    def test_shift_invalid(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        p = period.Period(dt1, dt2)
+
+        with self.subTest(subtest="lshift"):
+            self.assertRaises(NotImplementedError, operator.lshift, p, 42)
+        with self.subTest(subtest="rshift"):
+            self.assertRaises(NotImplementedError, operator.rshift, p, 42)
 
 
 class PeriodRepresentationTestCase(TestCase):

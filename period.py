@@ -68,6 +68,20 @@ class Period(PeriodProto):
 
     __ror__ = __or__
 
+    def __lshift__(self, other) -> Period:  # "p << delta"
+        if isinstance(other, datetime.timedelta):
+            return Period(self.start - other,  # type: ignore[abstract]
+                          self.end - other)
+        else:
+            raise NotImplementedError
+
+    def __rshift__(self, other) -> Period:  # "p >> delta"
+        if isinstance(other, datetime.timedelta):
+            return Period(self.start + other,  # type: ignore[abstract]
+                          self.end + other)
+        else:
+            raise NotImplementedError
+
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.split("/", maxsplit=1)
