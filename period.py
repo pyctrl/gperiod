@@ -117,7 +117,20 @@ def intersection(p1: PeriodProto,
                  *periods: PeriodProto,
                  flat: bool = False
                  ) -> t.Optional[Period | _T_DT_PAIR]:
-    raise NotImplementedError()
+    max_start = max(p1.start, p2.start)
+    min_end = min(p1.end, p2.end)
+    for p in periods:
+        if max_start >= min_end:
+            return None
+        max_start = max(p.start, max_start)
+        min_end = min(p.end, min_end)
+
+    if max_start >= min_end:
+        return None
+    elif flat:
+        return max_start, min_end
+    else:
+        return Period(max_start, min_end)  # type: ignore[abstract]
 
 
 def difference(p1: PeriodProto,
