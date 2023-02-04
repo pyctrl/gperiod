@@ -1,11 +1,14 @@
 from __future__ import annotations
 import datetime
+import operator
 import typing as t
 
 
 _F_START = "start"
 _F_END = "end"
 _T_DT_PAIR = tuple[datetime.datetime, datetime.datetime]
+
+_sort = operator.attrgetter(_F_START)
 
 
 # TODO(d.burmistrov):
@@ -70,26 +73,29 @@ def within(p: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
         return (p.start <= item.start) and (item.end <= p.end)
 
 
-def join(*periods: PeriodProto,
+def join(p1: PeriodProto,
+         p2: PeriodProto,
+         *periods: PeriodProto,
          flat: bool = False,
-         ) -> Period | _T_DT_PAIR:
-    if not periods:
-        raise TypeError("not enough periods")
-
-    result = [periods[0].start, periods[0].end]
-    for p in periods[1:]:
-        if p.end == result[0]:  # `p` on the left
-            result[0] = p.start
-        elif p.start == result[1]:  # `p` on the right
-            result[1] = p.end
-        else:
-            raise ValueError("periods must be consecutive")
-
-    if flat:
-        return t.cast(tuple[datetime.datetime, datetime.datetime],
-                      tuple(result))
+         ) -> Period | _T_DT_PAIR | None:
+    if periods:
+        periods = sorted((p1, p2) + periods,  # type: ignore[assignment]
+                         key=_sort)
+        p1 = periods[0]
+        for p2 in periods[1:]:
+            if p1.end == p2.start:
+                p1 = p2
+            else:
+                return None
+        result = (periods[0].start, periods[-1].end)
+    elif p1.end == p2.start:  # `p1` on the left
+        result = (p1.start, p2.end)
+    elif p1.start == p2.end:  # `p1` on the right
+        result = (p2.start, p1.end)
     else:
-        return Period(*result)  # type: ignore[abstract]
+        return None
+
+    return result if flat else Period(*result)  # type: ignore[abstract]
 
 
 def union(*periods: PeriodProto,

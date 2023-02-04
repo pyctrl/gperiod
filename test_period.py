@@ -37,7 +37,21 @@ FAKE_TS_29 = datetime.datetime(2021, 12, 11, 10, 0)
 FAKE_TS_30 = datetime.datetime(2022, 1, 16, 10, 0)
 
 
-class PeriodTestCase(unittest.TestCase):
+class TestCase(unittest.TestCase):
+
+    def _assert_result_datetime(self, result, expected):
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        self.assertIsInstance(result[0], datetime.datetime)
+        self.assertIsInstance(result[1], datetime.datetime)
+        self.assertEqual(result, expected)
+
+    def _assert_result_period(self, result, expected):
+        self.assertIsInstance(result, period.Period)
+        self.assertEqual(result, expected)
+
+
+class PeriodBaseTestCase(TestCase):
 
     def test_init(self):
         result = period.Period(FAKE_TS_01, FAKE_TS_02)
@@ -97,7 +111,7 @@ class PeriodTestCase(unittest.TestCase):
         self.assertEqual(r1, expected)
 
 
-class PeriodConvertTestCase(unittest.TestCase):
+class PeriodConvertTestCase(TestCase):
 
     def test_modcopy_copy(self):
         p = period.Period(FAKE_TS_05, FAKE_TS_10)
@@ -123,8 +137,7 @@ class PeriodConvertTestCase(unittest.TestCase):
 
         result = p.as_tuple()
 
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(result, expected)
+        self._assert_result_datetime(result, expected)
 
     def test_as_dict(self):
         p = period.Period(FAKE_TS_05, FAKE_TS_10)
@@ -136,198 +149,77 @@ class PeriodConvertTestCase(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-class WithinDatetimeTestCase(unittest.TestCase):
+class WithinTestCase(TestCase):
 
     def test_in(self):
         p = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p_in = period.Period(FAKE_TS_08, FAKE_TS_12)
+        p_left = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p_right = period.Period(FAKE_TS_10, FAKE_TS_15)
+        p_same = period.Period(FAKE_TS_05, FAKE_TS_15)
+        dt_in = FAKE_TS_10
+        dt_left = FAKE_TS_05
+        dt_right = FAKE_TS_15
 
-        result = period.within(p, FAKE_TS_10)
+        for item in (dt_in, dt_left, dt_right, p_in, p_left, p_right, p_same):
+            with self.subTest(item=item):
+                result = period.within(p, item)
 
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
+                self.assertTrue(result)
+                self.assertIsInstance(result, bool)
 
-    def test_border_left(self):
+    def test_not_in(self):
         p = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p_left = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p_touch_left = period.Period(FAKE_TS_01, FAKE_TS_05)
+        p_cross_left = period.Period(FAKE_TS_02, FAKE_TS_10)
+        p_right = period.Period(FAKE_TS_17, FAKE_TS_20)
+        p_touch_right = period.Period(FAKE_TS_15, FAKE_TS_20)
+        p_cross_right = period.Period(FAKE_TS_08, FAKE_TS_20)
+        p_bigger = period.Period(FAKE_TS_01, FAKE_TS_25)
+        dt_left = FAKE_TS_01
+        dt_right = FAKE_TS_20
 
-        result = period.within(p, FAKE_TS_05)
+        for item in (dt_left, dt_right,
+                     p_bigger,
+                     p_left, p_touch_left, p_cross_left,
+                     p_right, p_touch_right, p_cross_right):
+            with self.subTest(item=item):
+                result = period.within(p, item)
 
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_border_right(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_15)
-
-        result = period.within(p, FAKE_TS_15)
-
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_left(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_15)
-
-        result = period.within(p, FAKE_TS_01)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_right(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_15)
-
-        result = period.within(p, FAKE_TS_20)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
+                self.assertFalse(result)
+                self.assertIsInstance(result, bool)
 
 
-class WithinPeriodTestCase(unittest.TestCase):
+class JoinTestCase(TestCase):
 
-    def test_in(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_08, FAKE_TS_12)
+    def test_missing_args(self):
+        p = period.Period(FAKE_TS_01, FAKE_TS_02)
 
-        result = period.within(p1, p2)
-
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_in_same(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_05, FAKE_TS_15)
-
-        result = period.within(p1, p2)
-
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_in_left(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_05, FAKE_TS_10)
-
-        result = period.within(p1, p2)
-
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_in_right(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_10, FAKE_TS_15)
-
-        result = period.within(p1, p2)
-
-        self.assertTrue(result)
-        self.assertIsInstance(result, bool)
-
-    def test_cross_left(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_10)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_cross_right(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_08, FAKE_TS_20)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_left(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_01, FAKE_TS_02)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_right(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_17, FAKE_TS_20)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_touch_left(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_01, FAKE_TS_05)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-    def test_not_in_touch_right(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p2 = period.Period(FAKE_TS_15, FAKE_TS_20)
-
-        result = period.within(p1, p2)
-
-        self.assertFalse(result)
-        self.assertIsInstance(result, bool)
-
-
-class JoinResultPeriodTestCase(unittest.TestCase):
-
-    def test_empty_args(self):
         self.assertRaises(TypeError, period.join)
+        self.assertRaises(TypeError, period.join, flat=True)
+        self.assertRaises(TypeError, period.join, p)
+        self.assertRaises(TypeError, period.join, p, flat=True)
 
-    def test_single(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_02)
-
-        result = period.join(p)
-
-        self.assertIsInstance(result, period.Period)
-        self.assertEqual(result, p)
-        self.assertIsNot(result, p)
-
-    def test_multi(self):
+    def test_joined(self):
         p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
         p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
         p3 = period.Period(FAKE_TS_03, FAKE_TS_08)
-        expected = period.Period(FAKE_TS_01, FAKE_TS_08)
+        p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
+        expected = period.Period(FAKE_TS_01, FAKE_TS_10)
 
-        result = period.join(p2, p3, p1)
+        result_p = period.join(p2, p4, p3, p1)
+        result_dt = period.join(p2, p4, p3, p1, flat=True)
 
-        self.assertIsInstance(result, period.Period)
-        self.assertEqual(result, expected)
+        self._assert_result_period(result_p, expected)
+        self._assert_result_datetime(result_dt, expected.as_tuple())
 
-
-class JoinResultDatetimeTestCase(unittest.TestCase):
-
-    def test_empty_args(self):
-        self.assertRaises(TypeError, period.join, return_datetime=True)
-
-    def test_single(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_02)
-
-        result = period.join(p, flat=True)
-
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(len(result), 2)
-        self.assertIsInstance(result[0], datetime.datetime)
-        self.assertIsInstance(result[1], datetime.datetime)
-        self.assertEqual(result[0], FAKE_TS_01)
-        self.assertEqual(result[1], FAKE_TS_02)
-
-    def test_multi(self):
+    def test_not_joined(self):
         p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
-        p3 = period.Period(FAKE_TS_03, FAKE_TS_08)
+        p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
 
-        result = period.join(p2, p3, p1, flat=True)
-
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(len(result), 2)
-        self.assertIsInstance(result[0], datetime.datetime)
-        self.assertIsInstance(result[1], datetime.datetime)
-        self.assertEqual(result[0], FAKE_TS_01)
-        self.assertEqual(result[1], FAKE_TS_08)
+        self.assertIsNone(period.join(p4, p1))
+        self.assertIsNone(period.join(p4, p1, flat=True))
 
 
 if __name__ == "__main__":
