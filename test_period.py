@@ -328,3 +328,7 @@ class JoinResultDatetimeTestCase(unittest.TestCase):
         self.assertIsInstance(result[1], datetime.datetime)
         self.assertEqual(result[0], FAKE_TS_01)
         self.assertEqual(result[1], FAKE_TS_08)
+
+
+if __name__ == "__main__":
+    unittest.main()
