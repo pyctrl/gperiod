@@ -98,9 +98,11 @@ def join(p1: PeriodProto,
     return result if flat else Period(*result)  # type: ignore[abstract]
 
 
-def union(*periods: PeriodProto,
+def union(p1: PeriodProto,
+          p2: PeriodProto,
+          *periods: PeriodProto,
           flat: bool = False,
-          ) -> Period | _T_DT_PAIR:
+          ) -> Period | _T_DT_PAIR | None:
     raise NotImplementedError()
 
 
@@ -110,14 +112,17 @@ def split(p: PeriodProto,
     raise NotImplementedError()
 
 
-def intersection(*periods: PeriodProto,
+def intersection(p1: PeriodProto,
+                 p2: PeriodProto,
+                 *periods: PeriodProto,
                  flat: bool = False
                  ) -> t.Optional[Period | _T_DT_PAIR]:
     raise NotImplementedError()
 
 
-def difference(p: PeriodProto,
+def difference(p1: PeriodProto,
+               p2: PeriodProto,
                *periods: PeriodProto,
                flat: bool = False,
-               ) -> t.Generator[Period | _T_DT_PAIR, None, None]:
+               ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
     raise NotImplementedError()
