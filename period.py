@@ -58,6 +58,11 @@ class Period(PeriodProto):
 
     __radd__ = __add__
 
+    def __and__(self, other) -> Period | None:  # "p1 & p2"
+        return intersection(self, other)  # type: ignore[return-value]
+
+    __rand__ = __and__
+
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.split("/", maxsplit=1)

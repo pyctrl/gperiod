@@ -143,6 +143,33 @@ class PeriodOperationsTestCase(TestCase):
         with self.subTest(subtest="radd"):
             self.assertIsNone(p2 + p1)
 
+    def test_and_period_success(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
+        p1 = period.Period(dt1, dt3)
+        p2 = period.Period(dt2, dt4)
+        expected = period.Period(dt2, dt3)
+
+        with self.subTest(subtest="and"):
+            self._assert_result_period(p1 & p2, expected)
+        with self.subTest(subtest="rand"):
+            self._assert_result_period(p2 & p1, expected)
+
+    def test_and_period_failure(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
+        p1 = period.Period(dt1, dt2)
+        p2 = period.Period(dt3, dt4)
+
+        with self.subTest(subtest="and"):
+            self.assertIsNone(p1 & p2)
+        with self.subTest(subtest="rand"):
+            self.assertIsNone(p2 & p1)
+
 
 class PeriodRepresentationTestCase(TestCase):
 
