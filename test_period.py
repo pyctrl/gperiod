@@ -222,5 +222,67 @@ class JoinTestCase(TestCase):
         self.assertIsNone(period.join(p4, p1, flat=True))
 
 
+class UnionResultPeriodTestCase(TestCase):
+
+    def test_missing_args(self):
+        p = period.Period(FAKE_TS_01, FAKE_TS_02)
+
+        self.assertRaises(TypeError, period.union)
+        self.assertRaises(TypeError, period.union, flat=True)
+        self.assertRaises(TypeError, period.union, p)
+        self.assertRaises(TypeError, period.union, p, flat=True)
+
+    def test_empty(self):
+        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = period.Period(FAKE_TS_03, FAKE_TS_04)
+        p4 = period.Period(FAKE_TS_04, FAKE_TS_05)
+        p5 = period.Period(FAKE_TS_05, FAKE_TS_06)
+        subtests = {
+            "ordered_2args_1": (p1, p3),
+            "ordered_2args_2": (p2, p5),
+            "ordered_Nargs_1": (p1, p3, p5),
+            "reversed_2args_1": (p3, p1),
+            "mixed": (p2, p1, p5),
+            "duplicated": (p4, p1, p4, p4),
+        }
+
+        for subtest, periods in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertIsNone(period.union(*periods))
+                self.assertIsNone(period.union(*periods, flat=True))
+
+    def test_succeeded(self):
+        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = period.Period(FAKE_TS_03, FAKE_TS_08)
+        # p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
+        subtests = {
+            "ordered_joined_2args": (
+                (p1, p2),
+                period.Period(FAKE_TS_01, FAKE_TS_03)
+            ),
+            "ordered_joined_Nargs": (
+                (p1, p2, p3),
+                period.Period(FAKE_TS_01, FAKE_TS_08)
+            ),
+            "reversed_joined_2args": (
+                (p2, p1),
+                period.Period(FAKE_TS_01, FAKE_TS_03)
+            ),
+            "reversed_joined_Nargs": (
+                (p3, p2, p1),
+                period.Period(FAKE_TS_01, FAKE_TS_08)
+            ),
+        }
+
+        for subtest, unit in subtests.items():
+            periods, expected = unit
+            with self.subTest(subtest=subtest):
+                self._assert_result_period(period.union(*periods), expected)
+                self._assert_result_datetime(period.union(*periods, flat=True),
+                                             expected.as_tuple())
+
+
 if __name__ == "__main__":
     unittest.main()

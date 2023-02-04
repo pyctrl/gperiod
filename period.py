@@ -103,7 +103,24 @@ def union(p1: PeriodProto,
           *periods: PeriodProto,
           flat: bool = False,
           ) -> Period | _T_DT_PAIR | None:
-    raise NotImplementedError()
+    if periods:
+        periods = sorted((p1, p2) + periods,  # type: ignore[assignment]
+                         key=_sort)
+        p1 = periods[0]
+        max_end = p1.end
+        for p2 in periods[1:]:
+            if within(p1, p2.start):
+                p1 = p2
+                max_end = max(p2.end, max_end)
+            else:
+                return None
+        result = (periods[0].start, max_end)
+    elif intersection(p1, p2, flat=True):
+        result = (min(p1.start, p2.start), max(p1.end, p2.end))
+    else:
+        return join(p1, p2, flat=flat)
+
+    return result if flat else Period(*result)  # type: ignore[abstract]
 
 
 def split(p: PeriodProto,
