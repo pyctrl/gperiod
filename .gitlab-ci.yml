@@ -51,4 +51,4 @@ py311:
   tags:
     - docker
   script:
-    - tox -e py311
+    - tox -e py311 -- -v
