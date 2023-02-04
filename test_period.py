@@ -253,10 +253,24 @@ class JoinTestCase(TestCase):
 
     def test_not_joined(self):
         p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
+        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = period.Period(FAKE_TS_03, FAKE_TS_04)
+        p4 = period.Period(FAKE_TS_04, FAKE_TS_05)
+        p5 = period.Period(FAKE_TS_05, FAKE_TS_06)
+        subtests = {
+            "ordered_2args_1": (p1, p3),
+            "ordered_2args_2": (p2, p5),
+            "ordered_Nargs_1": (p1, p3, p5),
+            "reversed_2args_1": (p3, p1),
+            "reversed_Nargs_1": (p5, p3, p1),
+            "mixed": (p2, p1, p5),
+            "duplicated": (p4, p1, p4, p4),
+        }
 
-        self.assertIsNone(period.join(p4, p1))
-        self.assertIsNone(period.join(p4, p1, flat=True))
+        for subtest, periods in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertIsNone(period.join(*periods))
+                self.assertIsNone(period.join(*periods, flat=True))
 
 
 class UnionPeriodTestCase(TestCase):
@@ -280,6 +294,7 @@ class UnionPeriodTestCase(TestCase):
             "ordered_2args_2": (p2, p5),
             "ordered_Nargs_1": (p1, p3, p5),
             "reversed_2args_1": (p3, p1),
+            "reversed_Nargs_1": (p5, p3, p1),
             "mixed": (p2, p1, p5),
             "duplicated": (p4, p1, p4, p4),
         }
