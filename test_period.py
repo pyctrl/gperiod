@@ -340,5 +340,69 @@ class UnionPeriodTestCase(TestCase):
                                              expected.as_tuple())
 
 
+class IntersectionTestCase(TestCase):
+
+    def test_missing_args(self):
+        p = period.Period(FAKE_TS_01, FAKE_TS_02)
+
+        self.assertRaises(TypeError, period.intersection)
+        self.assertRaises(TypeError, period.intersection, flat=True)
+        self.assertRaises(TypeError, period.intersection, p)
+        self.assertRaises(TypeError, period.intersection, p, flat=True)
+
+    def test_empty(self):
+        p1 = period.Period(FAKE_TS_01, FAKE_TS_08)
+        p2 = period.Period(FAKE_TS_04, FAKE_TS_12)
+        p3 = period.Period(FAKE_TS_08, FAKE_TS_16)
+        p4 = period.Period(FAKE_TS_12, FAKE_TS_20)
+        p5 = period.Period(FAKE_TS_16, FAKE_TS_24)
+        subtests = {
+            "ordered_2args_1": (p1, p3),
+            "ordered_2args_2": (p2, p5),
+            "ordered_Nargs_1": (p1, p3, p5),
+            "reversed_2args_1": (p3, p1),
+            "reversed_Nargs_1": (p5, p3, p1),
+            "mixed": (p3, p1, p5),
+            "duplicated": (p4, p1, p4, p4),
+        }
+
+        for subtest, periods in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertIsNone(period.intersection(*periods))
+                self.assertIsNone(period.intersection(*periods, flat=True))
+
+    def test_succeeded(self):
+        p1 = period.Period(FAKE_TS_01, FAKE_TS_08)
+        p2 = period.Period(FAKE_TS_04, FAKE_TS_12)
+        p3 = period.Period(FAKE_TS_06, FAKE_TS_16)
+        subtests = {
+            "ordered_joined_2args_1": (
+                (p1, p2),
+                period.Period(FAKE_TS_04, FAKE_TS_08),
+            ),
+            "ordered_joined_Nargs": (
+                (p1, p2, p3),
+                period.Period(FAKE_TS_06, FAKE_TS_08),
+            ),
+            "reversed_joined_2args": (
+                (p2, p1),
+                period.Period(FAKE_TS_04, FAKE_TS_08),
+            ),
+            "reversed_joined_Nargs": (
+                (p3, p2, p1),
+                period.Period(FAKE_TS_06, FAKE_TS_08),
+            ),
+        }
+
+        for subtest, unit in subtests.items():
+            periods, expected = unit
+            with self.subTest(subtest=subtest):
+                self._assert_result_period(period.intersection(*periods),
+                                           expected)
+                self._assert_result_datetime(period.intersection(*periods,
+                                                                 flat=True),
+                                             expected.as_tuple())
+
+
 if __name__ == "__main__":
     unittest.main()
