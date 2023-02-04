@@ -63,6 +63,11 @@ class Period(PeriodProto):
 
     __rand__ = __and__
 
+    def __or__(self, other) -> Period | None:  # "p1 | p2"
+        return union(self, other)  # type: ignore[return-value]
+
+    __ror__ = __or__
+
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.split("/", maxsplit=1)
