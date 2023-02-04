@@ -305,25 +305,29 @@ class UnionPeriodTestCase(TestCase):
                 self.assertIsNone(period.union(*periods, flat=True))
 
     def test_succeeded(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
-        p3 = period.Period(FAKE_TS_03, FAKE_TS_08)
-        # p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
+        p1a = period.Period(FAKE_TS_01, FAKE_TS_03)
+        p1b = period.Period(FAKE_TS_02, FAKE_TS_05)
+        p2 = period.Period(FAKE_TS_03, FAKE_TS_04)
+        p3 = period.Period(FAKE_TS_04, FAKE_TS_08)
         subtests = {
-            "ordered_joined_2args": (
-                (p1, p2),
-                period.Period(FAKE_TS_01, FAKE_TS_03)
+            "ordered_joined_2args_1": (
+                (p1a, p2),
+                period.Period(FAKE_TS_01, FAKE_TS_04)
+            ),
+            "ordered_joined_2args_2": (
+                (p1a, p1b),
+                period.Period(FAKE_TS_01, FAKE_TS_05)
             ),
             "ordered_joined_Nargs": (
-                (p1, p2, p3),
+                (p1a, p2, p3),
                 period.Period(FAKE_TS_01, FAKE_TS_08)
             ),
             "reversed_joined_2args": (
-                (p2, p1),
-                period.Period(FAKE_TS_01, FAKE_TS_03)
+                (p2, p1a),
+                period.Period(FAKE_TS_01, FAKE_TS_04)
             ),
             "reversed_joined_Nargs": (
-                (p3, p2, p1),
+                (p3, p2, p1a),
                 period.Period(FAKE_TS_01, FAKE_TS_08)
             ),
         }
