@@ -102,6 +102,16 @@ class PeriodBaseTestCase(TestCase):
         self.assertEqual(r1, r2)
         self.assertEqual(r1, expected)
 
+    def test_in(self):
+        p = period.Period(FAKE_TS_01, FAKE_TS_10)
+        p_in = period.Period(FAKE_TS_04, FAKE_TS_06)
+        dt = FAKE_TS_05
+        subtests = {"datetime": dt, "period": p_in}
+
+        for subtest, item in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertIn(item, p)
+
 
 class PeriodOperationsTestCase(TestCase):
 

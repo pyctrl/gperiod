@@ -82,6 +82,9 @@ class Period(PeriodProto):
         else:
             raise NotImplementedError
 
+    def __contains__(self, item) -> bool:
+        return within(self, item)
+
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.split("/", maxsplit=1)
