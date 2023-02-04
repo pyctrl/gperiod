@@ -273,7 +273,7 @@ class JoinTestCase(TestCase):
                 self.assertIsNone(period.join(*periods, flat=True))
 
 
-class UnionPeriodTestCase(TestCase):
+class UnionTestCase(TestCase):
 
     def test_missing_args(self):
         p = period.Period(FAKE_TS_01, FAKE_TS_02)
