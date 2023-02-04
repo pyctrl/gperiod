@@ -90,15 +90,6 @@ class PeriodBaseTestCase(TestCase):
                               p,
                               period._F_END)
 
-    def test_repr(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
-        expected = ("Period(datetime.datetime(2019, 7, 31, 10, 0),"
-                    " datetime.datetime(2020, 1, 27, 10, 0))")
-
-        result = repr(p)
-
-        self.assertEqual(result, expected)
-
     def test_hash(self):
         p1 = period.Period(FAKE_TS_05, FAKE_TS_10)
         p2 = period.Period(FAKE_TS_05, FAKE_TS_10)
@@ -109,6 +100,52 @@ class PeriodBaseTestCase(TestCase):
 
         self.assertEqual(r1, r2)
         self.assertEqual(r1, expected)
+
+
+class PeriodRepresentationTestCase(TestCase):
+
+    def test_repr(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = ("Period(datetime.datetime(2019, 7, 31, 10, 0),"
+                    " datetime.datetime(2020, 1, 27, 10, 0))")
+
+        result = repr(p)
+
+        self.assertEqual(result, expected)
+
+    def test_str(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = p.to_isoformat()
+
+        result = str(p)
+
+        self.assertEqual(result, expected)
+
+    def test_to_isoformat(self):
+        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = "2019-07-31T10:00:00/2020-01-27T10:00:00"
+
+        result = p.to_isoformat()
+
+        self.assertEqual(result, expected)
+
+    def test_from_isoformat(self):
+        s = "2019-07-31T10:00:00/2020-01-27T10:00:00"
+        expected = period.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = period.Period.from_isoformat(s)
+
+        self.assertEqual(result, expected)
+
+    def test_from_isoformat_failed(self):
+        subtests = {
+            "no_slash": "2019-07-31T10:00:002020-01-27T10:00:00",
+            "many_slashes": "2019-07-3/1T10:00:00/2020-01-27T10:00:00",
+        }
+
+        for subtest, s in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertRaises(ValueError, period.Period.from_isoformat, s)
 
 
 class PeriodConvertTestCase(TestCase):
