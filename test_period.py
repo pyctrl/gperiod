@@ -102,6 +102,48 @@ class PeriodBaseTestCase(TestCase):
         self.assertEqual(r1, expected)
 
 
+class PeriodOperationsTestCase(TestCase):
+
+    def test_add_delta(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        p = period.Period(dt1, dt2)
+        delta = datetime.timedelta(days=2)
+        expected = period.Period(dt1, dt3)
+
+        with self.subTest(subtest="add"):
+            self._assert_result_period(p + delta, expected)
+        with self.subTest(subtest="radd"):
+            self._assert_result_period(delta + p, expected)
+
+    def test_add_period_success(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        p1 = period.Period(dt1, dt2)
+        p2 = period.Period(dt2, dt3)
+        expected = period.Period(dt1, dt3)
+
+        with self.subTest(subtest="add"):
+            self._assert_result_period(p1 + p2, expected)
+        with self.subTest(subtest="radd"):
+            self._assert_result_period(p2 + p1, expected)
+
+    def test_add_period_failure(self):
+        dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
+        dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
+        dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
+        dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
+        p1 = period.Period(dt1, dt2)
+        p2 = period.Period(dt3, dt4)
+
+        with self.subTest(subtest="add"):
+            self.assertIsNone(p1 + p2)
+        with self.subTest(subtest="radd"):
+            self.assertIsNone(p2 + p1)
+
+
 class PeriodRepresentationTestCase(TestCase):
 
     def test_repr(self):

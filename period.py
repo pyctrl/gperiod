@@ -49,6 +49,15 @@ class Period(PeriodProto):
     def __hash__(self):
         return hash((self.start, self.end))
 
+    def __add__(self, other) -> Period | None:  # "p1 + p2"
+        if isinstance(other, datetime.timedelta):
+            return Period(self.start,  # type: ignore[abstract]
+                          self.end + other)
+        else:
+            return join(self, other)  # type: ignore[return-value]
+
+    __radd__ = __add__
+
     # TODO(d.burmistrov): just first implementation
     @classmethod
     def from_isoformat(cls, s: str) -> Period:
