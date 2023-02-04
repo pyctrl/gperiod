@@ -312,23 +312,23 @@ class UnionPeriodTestCase(TestCase):
         subtests = {
             "ordered_joined_2args_1": (
                 (p1a, p2),
-                period.Period(FAKE_TS_01, FAKE_TS_04)
+                period.Period(FAKE_TS_01, FAKE_TS_04),
             ),
             "ordered_joined_2args_2": (
                 (p1a, p1b),
-                period.Period(FAKE_TS_01, FAKE_TS_05)
+                period.Period(FAKE_TS_01, FAKE_TS_05),
             ),
             "ordered_joined_Nargs": (
                 (p1a, p2, p3),
-                period.Period(FAKE_TS_01, FAKE_TS_08)
+                period.Period(FAKE_TS_01, FAKE_TS_08),
             ),
             "reversed_joined_2args": (
                 (p2, p1a),
-                period.Period(FAKE_TS_01, FAKE_TS_04)
+                period.Period(FAKE_TS_01, FAKE_TS_04),
             ),
             "reversed_joined_Nargs": (
                 (p3, p2, p1a),
-                period.Period(FAKE_TS_01, FAKE_TS_08)
+                period.Period(FAKE_TS_01, FAKE_TS_08),
             ),
         }
 
