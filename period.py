@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import datetime
 import operator
 import typing as t
@@ -19,6 +20,8 @@ _sort = operator.attrgetter(_F_START)
 #  - assert `start < end`
 #  - treat `date` similar to `datetime`?
 
+
+# base proto
 
 class PeriodProto(t.Protocol):
     start: datetime.datetime
@@ -122,6 +125,8 @@ class Period(PeriodProto):
         return self.start == other.start and self.end == other.end
 
 
+# base API
+
 def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
     if isinstance(item, datetime.datetime):
         return period.start <= item <= period.end
@@ -179,16 +184,10 @@ def union(period: PeriodProto,
     return result if flat else Period(*result)  # type: ignore[abstract]
 
 
-def split(period: PeriodProto,
-          *datetimes: datetime.datetime,
-          ) -> t.Generator[Period | _T_DT_PAIR, None, None]:
-    raise NotImplementedError()
-
-
 def intersection(period: PeriodProto,
                  other: PeriodProto,
                  *others: PeriodProto,
-                 flat: bool = False
+                 flat: bool = False,
                  ) -> t.Optional[Period | _T_DT_PAIR]:
     max_start = max(period.start, other.start)
     min_end = min(period.end, other.end)
