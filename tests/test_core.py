@@ -147,6 +147,21 @@ class PeriodBaseTestCase(TestCase):
                 self.assertIn(item, p)
 
 
+class ConvTestCase(TestCase):
+
+    def test_flat_true(self):
+        result = core._conv(FAKE_TS_01, FAKE_TS_02, flat=True)
+        expected = (FAKE_TS_01, FAKE_TS_02)
+
+        self._assert_result_datetime_pair(result, expected)
+
+    def test_flat_false(self):
+        result = core._conv(FAKE_TS_01, FAKE_TS_02, flat=False)
+        expected = core.Period(FAKE_TS_01, FAKE_TS_02)
+
+        self._assert_result_period(result, expected)
+
+
 class PeriodOperationsTestCase(TestCase):
 
     def test_add_delta(self):
@@ -689,6 +704,149 @@ class ToTimestampsTestCase(TestCase):
                     [FAKE_TS_01, FAKE_TS_02, FAKE_TS_03, FAKE_TS_04,
                      FAKE_TS_04, FAKE_TS_05, FAKE_TS_04, FAKE_TS_05],
                     self._assert_result_datetime)
+
+
+class DifferenceTestCase(TestCase):
+
+    def test_missing_args(self):
+        p = core.Period(FAKE_TS_01, FAKE_TS_02)
+
+        self.assertRaises(TypeError, core.difference)
+        self.assertRaises(TypeError, core.difference, flat=True)
+        self.assertRaises(TypeError, core.difference, p)
+        self.assertRaises(TypeError, core.difference, p, flat=True)
+
+    def test_no_dif(self):
+        p = core.Period(FAKE_TS_08, FAKE_TS_16)
+        expected = []
+        subtests = {
+            "same_2args": (core.Period(FAKE_TS_08, FAKE_TS_16),),
+            "bigger_left_2args": (core.Period(FAKE_TS_04, FAKE_TS_16),),
+            "bigger_right_2args": (core.Period(FAKE_TS_08, FAKE_TS_20),),
+            "bigger_both_2args": (core.Period(FAKE_TS_04, FAKE_TS_20),),
+            # "out_left_Nargs": (FAKE_TS_01, FAKE_TS_02, FAKE_TS_02),
+            # "border_left_Nargs": (FAKE_TS_01, FAKE_TS_01, FAKE_TS_08),
+            # "border_right_Nargs": (FAKE_TS_16, FAKE_TS_16, FAKE_TS_20),
+            # "out_right_Nargs": (FAKE_TS_18, FAKE_TS_18, FAKE_TS_20),
+        }
+
+        for subtest, periods in subtests.items():
+            with self.subTest(subtest=subtest):
+                self._assert_generator(
+                    core.difference(p, *periods),
+                    expected,
+                    self._assert_result_period,
+                )
+                self._assert_generator(
+                    core.difference(p, *periods, flat=True),
+                    expected,
+                    self._assert_result_datetime_pair,
+                )
+
+    def test_dif_1(self):
+        p = core.Period(FAKE_TS_08, FAKE_TS_16)
+        subtests = {
+            "left_2args": (
+                (core.Period(FAKE_TS_01, FAKE_TS_06),),
+                [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            ),
+            "left_border_2args": (
+                (core.Period(FAKE_TS_01, FAKE_TS_08),),
+                [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            ),
+            "right_border_2args": (
+                (core.Period(FAKE_TS_16, FAKE_TS_20),),
+                [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            ),
+            "right_2args": (
+                (core.Period(FAKE_TS_20, FAKE_TS_25),),
+                [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            ),
+            "left_invade_2args": (
+                (core.Period(FAKE_TS_01, FAKE_TS_12),),
+                [core.Period(FAKE_TS_12, FAKE_TS_16)],
+            ),
+            "right_invade_2args": (
+                (core.Period(FAKE_TS_12, FAKE_TS_20),),
+                [core.Period(FAKE_TS_08, FAKE_TS_12)],
+            ),
+            "invade_2args": (
+                (core.Period(FAKE_TS_10, FAKE_TS_12),),
+                [core.Period(FAKE_TS_08, FAKE_TS_10),
+                 core.Period(FAKE_TS_12, FAKE_TS_16)],
+            ),
+        }
+
+        for subtest, unit in subtests.items():
+            periods, expected = unit
+            with self.subTest(subtest=subtest):
+                self._assert_generator(
+                    core.difference(p, *periods),
+                    expected,
+                    self._assert_result_period,
+                )
+                self._assert_generator(
+                    core.difference(p, *periods, flat=True),
+                    [exp.as_tuple() for exp in expected],
+                    self._assert_result_datetime_pair,
+                )
+
+    def test_dif_multi(self):
+        p = core.Period(FAKE_TS_08, FAKE_TS_24)
+        subtests = {
+            "left_Nnargs": (
+                (core.Period(FAKE_TS_01, FAKE_TS_06),
+                 core.Period(FAKE_TS_03, FAKE_TS_07)),
+                [core.Period(FAKE_TS_08, FAKE_TS_24)],
+            ),
+
+            # "left_border_2args": (
+            #     (core.Period(FAKE_TS_01, FAKE_TS_08),),
+            #     [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            # ),
+            # "right_border_2args": (
+            #     (core.Period(FAKE_TS_16, FAKE_TS_20),),
+            #     [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            # ),
+            # "right_2args": (
+            #     (core.Period(FAKE_TS_20, FAKE_TS_25),),
+            #     [core.Period(FAKE_TS_08, FAKE_TS_16)],
+            # ),
+            # "left_invade_2args": (
+            #     (core.Period(FAKE_TS_01, FAKE_TS_12),),
+            #     [core.Period(FAKE_TS_12, FAKE_TS_16)],
+            # ),
+            # "right_invade_2args": (
+            #     (core.Period(FAKE_TS_12, FAKE_TS_20),),
+            #     [core.Period(FAKE_TS_08, FAKE_TS_12)],
+            # ),
+            "invade_Nargs": (
+                (core.Period(FAKE_TS_04, FAKE_TS_06),
+                 core.Period(FAKE_TS_09, FAKE_TS_11),
+                 core.Period(FAKE_TS_10, FAKE_TS_13),
+                 core.Period(FAKE_TS_15, FAKE_TS_18),
+                 core.Period(FAKE_TS_17, FAKE_TS_19),
+                 ),
+                [core.Period(FAKE_TS_08, FAKE_TS_09),
+                 core.Period(FAKE_TS_13, FAKE_TS_15),
+                 core.Period(FAKE_TS_19, FAKE_TS_24),
+                 ],
+            ),
+        }
+
+        for subtest, unit in subtests.items():
+            periods, expected = unit
+            with self.subTest(subtest=subtest):
+                self._assert_generator(
+                    core.difference(p, *periods),
+                    expected,
+                    self._assert_result_period,
+                )
+                self._assert_generator(
+                    core.difference(p, *periods, flat=True),
+                    [exp.as_tuple() for exp in expected],
+                    self._assert_result_datetime_pair,
+                )
 
 
 if __name__ == "__main__":

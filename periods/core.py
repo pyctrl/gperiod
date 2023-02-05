@@ -264,9 +264,81 @@ def intersection(period: PeriodProto,
         return Period(max_start, min_end)  # type: ignore[abstract]
 
 
+def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
+          ) -> Period | tuple[datetime.datetime, datetime.datetime]:
+    if flat:
+        return start, end
+    else:
+        return Period(start, end)  # type: ignore[abstract]
+
+
 def difference(period: PeriodProto,
                other: PeriodProto,
                *others: PeriodProto,
                flat: bool = False,
                ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
-    raise NotImplementedError()
+    if others:
+        # aggregate
+        others = sorted(  # type: ignore[assignment]
+            (o for o in others + (other,)
+             if intersection(period, o, flat=True)),
+            key=_sort)
+
+    if others:
+        # then having one of this pictures:
+        #
+        #   I.
+        #       |-----------------------|
+        #     |------|  |----| |--|  |-----|
+        #
+        #   II.
+        #       |-----------------------|
+        #         |--|  |----| |--|  |-----|
+        #
+        #   III.
+        #       |-----------------------|
+        #     |------|  |----| |--| |-|
+        #
+        #   IV.
+        #       |-----------------------|
+        #         |--|  |----| |--| |-|
+
+        cross = others[0]
+        # first
+        if period.start < cross.start:
+            yield _conv(period.start, cross.start, flat=flat)
+
+        # aggregate + mids
+        for item in others[1:]:
+            if x := union(item, cross):
+                cross = t.cast(PeriodProto, x)
+            else:
+                yield _conv(cross.end, item.start, flat=flat)
+                cross = item
+
+        # last
+        if period.end > cross.end:
+            yield _conv(cross.end, period.end, flat=flat)
+
+    elif the_x := intersection(period, other, flat=True):
+        # I.
+        #   |-----p-----|
+        #      |--i--|
+        # II.
+        #   |-----p-----|
+        #         |--r--|
+        # III.
+        #   |-----p-----|
+        #   |--l--|
+
+        start, end = t.cast(_T_DT_PAIR, the_x)
+        if period.start < start:  # I./II. left
+            yield _conv(start=period.start, end=start, flat=flat)
+            if period.end > end:  # I. right
+                yield _conv(start=end, end=period.end, flat=flat)
+        elif period.end != end:  # III. right
+            yield _conv(start=end, end=period.end, flat=flat)
+        # no `else` -- because `cross` equals `period`
+
+    else:
+        yield _conv(start=period.start, end=period.end, flat=flat)
