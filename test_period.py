@@ -157,7 +157,7 @@ class PeriodRepresentationTestCase(TestCase):
 
     def test_str(self):
         p = period.Period(FAKE_TS_05, FAKE_TS_10)
-        expected = p.to_isoformat()
+        expected = p.isoformat()
 
         result = str(p)
 
@@ -167,7 +167,7 @@ class PeriodRepresentationTestCase(TestCase):
         p = period.Period(FAKE_TS_05, FAKE_TS_10)
         expected = "2019-07-31T10:00:00/2020-01-27T10:00:00"
 
-        result = p.to_isoformat()
+        result = p.isoformat()
 
         self.assertEqual(result, expected)
 
@@ -175,7 +175,7 @@ class PeriodRepresentationTestCase(TestCase):
         s = "2019-07-31T10:00:00/2020-01-27T10:00:00"
         expected = period.Period(FAKE_TS_05, FAKE_TS_10)
 
-        result = period.Period.from_isoformat(s)
+        result = period.Period.fromisoformat(s)
 
         self.assertEqual(result, expected)
 
@@ -187,7 +187,7 @@ class PeriodRepresentationTestCase(TestCase):
 
         for subtest, s in subtests.items():
             with self.subTest(subtest=subtest):
-                self.assertRaises(ValueError, period.Period.from_isoformat, s)
+                self.assertRaises(ValueError, period.Period.fromisoformat, s)
 
 
 class PeriodConvertTestCase(TestCase):

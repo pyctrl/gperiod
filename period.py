@@ -38,7 +38,7 @@ class Period(PeriodProto):
         return f"{type(self).__name__}({self.start!r}, {self.end!r})"
 
     def __str__(self):
-        return self.to_isoformat()
+        return self.isoformat()
 
     def __setattr__(self, key, value):
         raise NotImplementedError("method not allowed")
@@ -58,19 +58,21 @@ class Period(PeriodProto):
 
     __radd__ = __add__
 
-    # TODO(d.burmistrov): just first implementation
     @classmethod
-    def from_isoformat(cls, s: str) -> Period:
+    def fromisoformat(cls, s: str) -> Period:
         items = s.split("/", maxsplit=1)
         if len(items) != 2:
             raise ValueError("Invalid period format")
         return Period(  # type: ignore[abstract]
             datetime.datetime.fromisoformat(items[0]),
-            datetime.datetime.fromisoformat(items[1])
+            datetime.datetime.fromisoformat(items[1]),
         )
 
-    def to_isoformat(self) -> str:
-        return f"{self.start.isoformat()}/{self.end.isoformat()}"
+    def isoformat(self, sep="T", timespec="auto") -> str:
+        return "/".join(
+            datetime.datetime.isoformat(item, sep=sep, timespec=timespec)
+            for item in (self.start, self.end)
+        )
 
     # TODO(d.burmistrov): __deepcopy__
     def __copy__(self) -> Period:
