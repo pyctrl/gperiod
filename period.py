@@ -122,77 +122,77 @@ class Period(PeriodProto):
         return self.start == other.start and self.end == other.end
 
 
-def within(p: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
+def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
     if isinstance(item, datetime.datetime):
-        return p.start <= item <= p.end
+        return period.start <= item <= period.end
     else:
-        return (p.start <= item.start) and (item.end <= p.end)
+        return (period.start <= item.start) and (item.end <= period.end)
 
 
-def join(p1: PeriodProto,
-         p2: PeriodProto,
-         *periods: PeriodProto,
+def join(period: PeriodProto,
+         other: PeriodProto,
+         *others: PeriodProto,
          flat: bool = False,
          ) -> Period | _T_DT_PAIR | None:
-    if periods:
-        periods = sorted((p1, p2) + periods,  # type: ignore[assignment]
-                         key=_sort)
-        p1 = periods[0]
-        for p2 in periods[1:]:
-            if p1.end == p2.start:
-                p1 = p2
+    if others:
+        others = sorted((period, other) + others,  # type: ignore[assignment]
+                        key=_sort)
+        period = others[0]
+        for other in others[1:]:
+            if period.end == other.start:
+                period = other
             else:
                 return None
-        result = (periods[0].start, periods[-1].end)
-    elif p1.end == p2.start:  # `p1` on the left
-        result = (p1.start, p2.end)
-    elif p1.start == p2.end:  # `p1` on the right
-        result = (p2.start, p1.end)
+        result = (others[0].start, others[-1].end)
+    elif period.end == other.start:  # `p1` on the left
+        result = (period.start, other.end)
+    elif period.start == other.end:  # `p1` on the right
+        result = (other.start, period.end)
     else:
         return None
 
     return result if flat else Period(*result)  # type: ignore[abstract]
 
 
-def union(p1: PeriodProto,
-          p2: PeriodProto,
-          *periods: PeriodProto,
+def union(period: PeriodProto,
+          other: PeriodProto,
+          *others: PeriodProto,
           flat: bool = False,
           ) -> Period | _T_DT_PAIR | None:
-    if periods:
-        periods = sorted((p1, p2) + periods,  # type: ignore[assignment]
-                         key=_sort)
-        p1 = periods[0]
-        max_end = p1.end
-        for p2 in periods[1:]:
-            if within(p1, p2.start):
-                p1 = p2
-                max_end = max(p2.end, max_end)
+    if others:
+        others = sorted((period, other) + others,  # type: ignore[assignment]
+                        key=_sort)
+        period = others[0]
+        max_end = period.end
+        for other in others[1:]:
+            if within(period, other.start):
+                period = other
+                max_end = max(other.end, max_end)
             else:
                 return None
-        result = (periods[0].start, max_end)
-    elif intersection(p1, p2, flat=True):
-        result = (min(p1.start, p2.start), max(p1.end, p2.end))
+        result = (others[0].start, max_end)
+    elif intersection(period, other, flat=True):
+        result = (min(period.start, other.start), max(period.end, other.end))
     else:
-        return join(p1, p2, flat=flat)
+        return join(period, other, flat=flat)
 
     return result if flat else Period(*result)  # type: ignore[abstract]
 
 
-def split(p: PeriodProto,
+def split(period: PeriodProto,
           *datetimes: datetime.datetime,
           ) -> t.Generator[Period | _T_DT_PAIR, None, None]:
     raise NotImplementedError()
 
 
-def intersection(p1: PeriodProto,
-                 p2: PeriodProto,
-                 *periods: PeriodProto,
+def intersection(period: PeriodProto,
+                 other: PeriodProto,
+                 *others: PeriodProto,
                  flat: bool = False
                  ) -> t.Optional[Period | _T_DT_PAIR]:
-    max_start = max(p1.start, p2.start)
-    min_end = min(p1.end, p2.end)
-    for p in periods:
+    max_start = max(period.start, other.start)
+    min_end = min(period.end, other.end)
+    for p in others:
         if max_start >= min_end:
             return None
         max_start = max(p.start, max_start)
@@ -206,9 +206,9 @@ def intersection(p1: PeriodProto,
         return Period(max_start, min_end)  # type: ignore[abstract]
 
 
-def difference(p1: PeriodProto,
-               p2: PeriodProto,
-               *periods: PeriodProto,
+def difference(period: PeriodProto,
+               other: PeriodProto,
+               *others: PeriodProto,
                flat: bool = False,
                ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
     raise NotImplementedError()
