@@ -49,7 +49,8 @@ class Period(PeriodProto):
     def __hash__(self):
         return hash((self.start, self.end))
 
-    def __add__(self, other) -> Period | None:  # "p1 + p2"
+    def __add__(self, other: PeriodProto | datetime.timedelta
+                ) -> Period | None:  # "p1 + p2"
         if isinstance(other, datetime.timedelta):
             return Period(self.start,  # type: ignore[abstract]
                           self.end + other)
@@ -58,31 +59,31 @@ class Period(PeriodProto):
 
     __radd__ = __add__
 
-    def __and__(self, other) -> Period | None:  # "p1 & p2"
+    def __and__(self, other: PeriodProto) -> Period | None:  # "p1 & p2"
         return intersection(self, other)  # type: ignore[return-value]
 
     __rand__ = __and__
 
-    def __or__(self, other) -> Period | None:  # "p1 | p2"
+    def __or__(self, other: PeriodProto) -> Period | None:  # "p1 | p2"
         return union(self, other)  # type: ignore[return-value]
 
     __ror__ = __or__
 
-    def __lshift__(self, other) -> Period:  # "p << delta"
+    def __lshift__(self, other: datetime.timedelta) -> Period:  # "p << delta"
         if isinstance(other, datetime.timedelta):
             return Period(self.start - other,  # type: ignore[abstract]
                           self.end - other)
         else:
             raise NotImplementedError
 
-    def __rshift__(self, other) -> Period:  # "p >> delta"
+    def __rshift__(self, other: datetime.timedelta) -> Period:  # "p >> delta"
         if isinstance(other, datetime.timedelta):
             return Period(self.start + other,  # type: ignore[abstract]
                           self.end + other)
         else:
             raise NotImplementedError
 
-    def __contains__(self, item) -> bool:
+    def __contains__(self, item: PeriodProto | datetime.datetime) -> bool:
         return within(self, item)
 
     @classmethod
