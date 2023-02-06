@@ -3,7 +3,7 @@ import datetime
 import operator
 import unittest
 
-import period
+from periods import core
 
 
 FAKE_TS_01 = datetime.datetime(2019, 2, 1, 10, 0, 0)
@@ -48,52 +48,52 @@ class TestCase(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def _assert_result_period(self, result, expected):
-        self.assertIsInstance(result, period.Period)
+        self.assertIsInstance(result, core.Period)
         self.assertEqual(result, expected)
 
 
 class PeriodBaseTestCase(TestCase):
 
     def test_init(self):
-        result = period.Period(FAKE_TS_01, FAKE_TS_02)
+        result = core.Period(FAKE_TS_01, FAKE_TS_02)
 
         self.assertIs(result.start, FAKE_TS_01)
         self.assertIs(result.end, FAKE_TS_02)
-        self.assertIsInstance(result, period.Period)
+        self.assertIsInstance(result, core.Period)
 
     def test_modify(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
 
-        with self.subTest(attr=period._F_START):
+        with self.subTest(attr=core._F_START):
             self.assertRaises(NotImplementedError,
                               setattr,
                               p,
-                              period._F_START,
+                              core._F_START,
                               FAKE_TS_01)
-        with self.subTest(attr=period._F_END):
+        with self.subTest(attr=core._F_END):
             self.assertRaises(NotImplementedError,
                               setattr,
                               p,
-                              period._F_END,
+                              core._F_END,
                               FAKE_TS_15)
 
     def test_delete(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
 
-        with self.subTest(attr=period._F_START):
+        with self.subTest(attr=core._F_START):
             self.assertRaises(NotImplementedError,
                               delattr,
                               p,
-                              period._F_START)
-        with self.subTest(attr=period._F_END):
+                              core._F_START)
+        with self.subTest(attr=core._F_END):
             self.assertRaises(NotImplementedError,
                               delattr,
                               p,
-                              period._F_END)
+                              core._F_END)
 
     def test_hash(self):
-        p1 = period.Period(FAKE_TS_05, FAKE_TS_10)
-        p2 = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p1 = core.Period(FAKE_TS_05, FAKE_TS_10)
+        p2 = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = hash((FAKE_TS_05, FAKE_TS_10))
 
         r1 = hash(p1)
@@ -103,8 +103,8 @@ class PeriodBaseTestCase(TestCase):
         self.assertEqual(r1, expected)
 
     def test_in(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_10)
-        p_in = period.Period(FAKE_TS_04, FAKE_TS_06)
+        p = core.Period(FAKE_TS_01, FAKE_TS_10)
+        p_in = core.Period(FAKE_TS_04, FAKE_TS_06)
         dt = FAKE_TS_05
         subtests = {"datetime": dt, "period": p_in}
 
@@ -119,9 +119,9 @@ class PeriodOperationsTestCase(TestCase):
         dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
-        p = period.Period(dt1, dt2)
+        p = core.Period(dt1, dt2)
         delta = datetime.timedelta(days=2)
-        expected = period.Period(dt1, dt3)
+        expected = core.Period(dt1, dt3)
 
         with self.subTest(subtest="add"):
             self._assert_result_period(p + delta, expected)
@@ -132,9 +132,9 @@ class PeriodOperationsTestCase(TestCase):
         dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
-        p1 = period.Period(dt1, dt2)
-        p2 = period.Period(dt2, dt3)
-        expected = period.Period(dt1, dt3)
+        p1 = core.Period(dt1, dt2)
+        p2 = core.Period(dt2, dt3)
+        expected = core.Period(dt1, dt3)
 
         with self.subTest(subtest="add"):
             self._assert_result_period(p1 + p2, expected)
@@ -146,8 +146,8 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p1 = period.Period(dt1, dt2)
-        p2 = period.Period(dt3, dt4)
+        p1 = core.Period(dt1, dt2)
+        p2 = core.Period(dt3, dt4)
 
         with self.subTest(subtest="add"):
             self.assertIsNone(p1 + p2)
@@ -159,9 +159,9 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p1 = period.Period(dt1, dt3)
-        p2 = period.Period(dt2, dt4)
-        expected = period.Period(dt2, dt3)
+        p1 = core.Period(dt1, dt3)
+        p2 = core.Period(dt2, dt4)
+        expected = core.Period(dt2, dt3)
 
         with self.subTest(subtest="and"):
             self._assert_result_period(p1 & p2, expected)
@@ -173,8 +173,8 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p1 = period.Period(dt1, dt2)
-        p2 = period.Period(dt3, dt4)
+        p1 = core.Period(dt1, dt2)
+        p2 = core.Period(dt3, dt4)
 
         with self.subTest(subtest="and"):
             self.assertIsNone(p1 & p2)
@@ -186,9 +186,9 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p1 = period.Period(dt1, dt3)
-        p2 = period.Period(dt2, dt4)
-        expected = period.Period(dt1, dt4)
+        p1 = core.Period(dt1, dt3)
+        p2 = core.Period(dt2, dt4)
+        expected = core.Period(dt1, dt4)
 
         with self.subTest(subtest="or"):
             self._assert_result_period(p1 | p2, expected)
@@ -200,8 +200,8 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p1 = period.Period(dt1, dt2)
-        p2 = period.Period(dt3, dt4)
+        p1 = core.Period(dt1, dt2)
+        p2 = core.Period(dt3, dt4)
 
         with self.subTest(subtest="or"):
             self.assertIsNone(p1 | p2)
@@ -213,9 +213,9 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p = period.Period(dt2, dt4)
+        p = core.Period(dt2, dt4)
         delta = datetime.timedelta(days=2)
-        expected = period.Period(dt1, dt3)
+        expected = core.Period(dt1, dt3)
 
         self._assert_result_period(p << delta, expected)
 
@@ -224,16 +224,16 @@ class PeriodOperationsTestCase(TestCase):
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
         dt3 = datetime.datetime(2020, 1, 5, 10, 0, 0)
         dt4 = datetime.datetime(2020, 1, 7, 10, 0, 0)
-        p = period.Period(dt1, dt3)
+        p = core.Period(dt1, dt3)
         delta = datetime.timedelta(days=2)
-        expected = period.Period(dt2, dt4)
+        expected = core.Period(dt2, dt4)
 
         self._assert_result_period(p >> delta, expected)
 
     def test_shift_invalid(self):
         dt1 = datetime.datetime(2020, 1, 1, 10, 0, 0)
         dt2 = datetime.datetime(2020, 1, 3, 10, 0, 0)
-        p = period.Period(dt1, dt2)
+        p = core.Period(dt1, dt2)
 
         with self.subTest(subtest="lshift"):
             self.assertRaises(NotImplementedError, operator.lshift, p, 42)
@@ -244,7 +244,7 @@ class PeriodOperationsTestCase(TestCase):
 class PeriodRepresentationTestCase(TestCase):
 
     def test_repr(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = ("Period(datetime.datetime(2019, 7, 31, 10, 0),"
                     " datetime.datetime(2020, 1, 27, 10, 0))")
 
@@ -253,7 +253,7 @@ class PeriodRepresentationTestCase(TestCase):
         self.assertEqual(result, expected)
 
     def test_str(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = p.isoformat()
 
         result = str(p)
@@ -261,7 +261,7 @@ class PeriodRepresentationTestCase(TestCase):
         self.assertEqual(result, expected)
 
     def test_to_isoformat(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = "2019-07-31T10:00:00/2020-01-27T10:00:00"
 
         result = p.isoformat()
@@ -270,9 +270,9 @@ class PeriodRepresentationTestCase(TestCase):
 
     def test_from_isoformat(self):
         s = "2019-07-31T10:00:00/2020-01-27T10:00:00"
-        expected = period.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = core.Period(FAKE_TS_05, FAKE_TS_10)
 
-        result = period.Period.fromisoformat(s)
+        result = core.Period.fromisoformat(s)
 
         self.assertEqual(result, expected)
 
@@ -284,31 +284,31 @@ class PeriodRepresentationTestCase(TestCase):
 
         for subtest, s in subtests.items():
             with self.subTest(subtest=subtest):
-                self.assertRaises(ValueError, period.Period.fromisoformat, s)
+                self.assertRaises(ValueError, core.Period.fromisoformat, s)
 
 
 class PeriodConvertTestCase(TestCase):
 
     def test_modcopy_copy(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
 
         result = copy.copy(p)
 
-        self.assertIsInstance(result, period.Period)
+        self.assertIsInstance(result, core.Period)
         self.assertIsNot(result, p)
         self.assertEqual(result, p)
 
     def test_copy(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
 
         result = p.copy()
 
-        self.assertIsInstance(result, period.Period)
+        self.assertIsInstance(result, core.Period)
         self.assertIsNot(result, p)
         self.assertEqual(result, p)
 
     def test_as_tuple(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = (p.start, p.end)
 
         result = p.as_tuple()
@@ -316,7 +316,7 @@ class PeriodConvertTestCase(TestCase):
         self._assert_result_datetime(result, expected)
 
     def test_as_dict(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_10)
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = dict(start=p.start, end=p.end)
 
         result = p.as_dict()
@@ -328,31 +328,31 @@ class PeriodConvertTestCase(TestCase):
 class WithinTestCase(TestCase):
 
     def test_in(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p_in = period.Period(FAKE_TS_08, FAKE_TS_12)
-        p_left = period.Period(FAKE_TS_05, FAKE_TS_10)
-        p_right = period.Period(FAKE_TS_10, FAKE_TS_15)
-        p_same = period.Period(FAKE_TS_05, FAKE_TS_15)
+        p = core.Period(FAKE_TS_05, FAKE_TS_15)
+        p_in = core.Period(FAKE_TS_08, FAKE_TS_12)
+        p_left = core.Period(FAKE_TS_05, FAKE_TS_10)
+        p_right = core.Period(FAKE_TS_10, FAKE_TS_15)
+        p_same = core.Period(FAKE_TS_05, FAKE_TS_15)
         dt_in = FAKE_TS_10
         dt_left = FAKE_TS_05
         dt_right = FAKE_TS_15
 
         for item in (dt_in, dt_left, dt_right, p_in, p_left, p_right, p_same):
             with self.subTest(item=item):
-                result = period.within(p, item)
+                result = core.within(p, item)
 
                 self.assertTrue(result)
                 self.assertIsInstance(result, bool)
 
     def test_not_in(self):
-        p = period.Period(FAKE_TS_05, FAKE_TS_15)
-        p_left = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p_touch_left = period.Period(FAKE_TS_01, FAKE_TS_05)
-        p_cross_left = period.Period(FAKE_TS_02, FAKE_TS_10)
-        p_right = period.Period(FAKE_TS_17, FAKE_TS_20)
-        p_touch_right = period.Period(FAKE_TS_15, FAKE_TS_20)
-        p_cross_right = period.Period(FAKE_TS_08, FAKE_TS_20)
-        p_bigger = period.Period(FAKE_TS_01, FAKE_TS_25)
+        p = core.Period(FAKE_TS_05, FAKE_TS_15)
+        p_left = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p_touch_left = core.Period(FAKE_TS_01, FAKE_TS_05)
+        p_cross_left = core.Period(FAKE_TS_02, FAKE_TS_10)
+        p_right = core.Period(FAKE_TS_17, FAKE_TS_20)
+        p_touch_right = core.Period(FAKE_TS_15, FAKE_TS_20)
+        p_cross_right = core.Period(FAKE_TS_08, FAKE_TS_20)
+        p_bigger = core.Period(FAKE_TS_01, FAKE_TS_25)
         dt_left = FAKE_TS_01
         dt_right = FAKE_TS_20
 
@@ -361,7 +361,7 @@ class WithinTestCase(TestCase):
                      p_left, p_touch_left, p_cross_left,
                      p_right, p_touch_right, p_cross_right):
             with self.subTest(item=item):
-                result = period.within(p, item)
+                result = core.within(p, item)
 
                 self.assertFalse(result)
                 self.assertIsInstance(result, bool)
@@ -370,32 +370,32 @@ class WithinTestCase(TestCase):
 class JoinTestCase(TestCase):
 
     def test_missing_args(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p = core.Period(FAKE_TS_01, FAKE_TS_02)
 
-        self.assertRaises(TypeError, period.join)
-        self.assertRaises(TypeError, period.join, flat=True)
-        self.assertRaises(TypeError, period.join, p)
-        self.assertRaises(TypeError, period.join, p, flat=True)
+        self.assertRaises(TypeError, core.join)
+        self.assertRaises(TypeError, core.join, flat=True)
+        self.assertRaises(TypeError, core.join, p)
+        self.assertRaises(TypeError, core.join, p, flat=True)
 
     def test_joined(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
-        p3 = period.Period(FAKE_TS_03, FAKE_TS_08)
-        p4 = period.Period(FAKE_TS_08, FAKE_TS_10)
-        expected = period.Period(FAKE_TS_01, FAKE_TS_10)
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = core.Period(FAKE_TS_03, FAKE_TS_08)
+        p4 = core.Period(FAKE_TS_08, FAKE_TS_10)
+        expected = core.Period(FAKE_TS_01, FAKE_TS_10)
 
-        result_p = period.join(p2, p4, p3, p1)
-        result_dt = period.join(p2, p4, p3, p1, flat=True)
+        result_p = core.join(p2, p4, p3, p1)
+        result_dt = core.join(p2, p4, p3, p1, flat=True)
 
         self._assert_result_period(result_p, expected)
         self._assert_result_datetime(result_dt, expected.as_tuple())
 
     def test_not_joined(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
-        p3 = period.Period(FAKE_TS_03, FAKE_TS_04)
-        p4 = period.Period(FAKE_TS_04, FAKE_TS_05)
-        p5 = period.Period(FAKE_TS_05, FAKE_TS_06)
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = core.Period(FAKE_TS_03, FAKE_TS_04)
+        p4 = core.Period(FAKE_TS_04, FAKE_TS_05)
+        p5 = core.Period(FAKE_TS_05, FAKE_TS_06)
         subtests = {
             "ordered_2args_1": (p1, p3),
             "ordered_2args_2": (p2, p5),
@@ -408,26 +408,26 @@ class JoinTestCase(TestCase):
 
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
-                self.assertIsNone(period.join(*periods))
-                self.assertIsNone(period.join(*periods, flat=True))
+                self.assertIsNone(core.join(*periods))
+                self.assertIsNone(core.join(*periods, flat=True))
 
 
 class UnionTestCase(TestCase):
 
     def test_missing_args(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p = core.Period(FAKE_TS_01, FAKE_TS_02)
 
-        self.assertRaises(TypeError, period.union)
-        self.assertRaises(TypeError, period.union, flat=True)
-        self.assertRaises(TypeError, period.union, p)
-        self.assertRaises(TypeError, period.union, p, flat=True)
+        self.assertRaises(TypeError, core.union)
+        self.assertRaises(TypeError, core.union, flat=True)
+        self.assertRaises(TypeError, core.union, p)
+        self.assertRaises(TypeError, core.union, p, flat=True)
 
     def test_empty(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_02)
-        p2 = period.Period(FAKE_TS_02, FAKE_TS_03)
-        p3 = period.Period(FAKE_TS_03, FAKE_TS_04)
-        p4 = period.Period(FAKE_TS_04, FAKE_TS_05)
-        p5 = period.Period(FAKE_TS_05, FAKE_TS_06)
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = core.Period(FAKE_TS_03, FAKE_TS_04)
+        p4 = core.Period(FAKE_TS_04, FAKE_TS_05)
+        p5 = core.Period(FAKE_TS_05, FAKE_TS_06)
         subtests = {
             "ordered_2args_1": (p1, p3),
             "ordered_2args_2": (p2, p5),
@@ -440,61 +440,61 @@ class UnionTestCase(TestCase):
 
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
-                self.assertIsNone(period.union(*periods))
-                self.assertIsNone(period.union(*periods, flat=True))
+                self.assertIsNone(core.union(*periods))
+                self.assertIsNone(core.union(*periods, flat=True))
 
     def test_succeeded(self):
-        p1a = period.Period(FAKE_TS_01, FAKE_TS_03)
-        p1b = period.Period(FAKE_TS_02, FAKE_TS_05)
-        p2 = period.Period(FAKE_TS_03, FAKE_TS_04)
-        p3 = period.Period(FAKE_TS_04, FAKE_TS_08)
+        p1a = core.Period(FAKE_TS_01, FAKE_TS_03)
+        p1b = core.Period(FAKE_TS_02, FAKE_TS_05)
+        p2 = core.Period(FAKE_TS_03, FAKE_TS_04)
+        p3 = core.Period(FAKE_TS_04, FAKE_TS_08)
         subtests = {
             "ordered_joined_2args_1": (
                 (p1a, p2),
-                period.Period(FAKE_TS_01, FAKE_TS_04),
+                core.Period(FAKE_TS_01, FAKE_TS_04),
             ),
             "ordered_joined_2args_2": (
                 (p1a, p1b),
-                period.Period(FAKE_TS_01, FAKE_TS_05),
+                core.Period(FAKE_TS_01, FAKE_TS_05),
             ),
             "ordered_joined_Nargs": (
                 (p1a, p2, p3),
-                period.Period(FAKE_TS_01, FAKE_TS_08),
+                core.Period(FAKE_TS_01, FAKE_TS_08),
             ),
             "reversed_joined_2args": (
                 (p2, p1a),
-                period.Period(FAKE_TS_01, FAKE_TS_04),
+                core.Period(FAKE_TS_01, FAKE_TS_04),
             ),
             "reversed_joined_Nargs": (
                 (p3, p2, p1a),
-                period.Period(FAKE_TS_01, FAKE_TS_08),
+                core.Period(FAKE_TS_01, FAKE_TS_08),
             ),
         }
 
         for subtest, unit in subtests.items():
             periods, expected = unit
             with self.subTest(subtest=subtest):
-                self._assert_result_period(period.union(*periods), expected)
-                self._assert_result_datetime(period.union(*periods, flat=True),
+                self._assert_result_period(core.union(*periods), expected)
+                self._assert_result_datetime(core.union(*periods, flat=True),
                                              expected.as_tuple())
 
 
 class IntersectionTestCase(TestCase):
 
     def test_missing_args(self):
-        p = period.Period(FAKE_TS_01, FAKE_TS_02)
+        p = core.Period(FAKE_TS_01, FAKE_TS_02)
 
-        self.assertRaises(TypeError, period.intersection)
-        self.assertRaises(TypeError, period.intersection, flat=True)
-        self.assertRaises(TypeError, period.intersection, p)
-        self.assertRaises(TypeError, period.intersection, p, flat=True)
+        self.assertRaises(TypeError, core.intersection)
+        self.assertRaises(TypeError, core.intersection, flat=True)
+        self.assertRaises(TypeError, core.intersection, p)
+        self.assertRaises(TypeError, core.intersection, p, flat=True)
 
     def test_empty(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_08)
-        p2 = period.Period(FAKE_TS_04, FAKE_TS_12)
-        p3 = period.Period(FAKE_TS_08, FAKE_TS_16)
-        p4 = period.Period(FAKE_TS_12, FAKE_TS_20)
-        p5 = period.Period(FAKE_TS_16, FAKE_TS_24)
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_08)
+        p2 = core.Period(FAKE_TS_04, FAKE_TS_12)
+        p3 = core.Period(FAKE_TS_08, FAKE_TS_16)
+        p4 = core.Period(FAKE_TS_12, FAKE_TS_20)
+        p5 = core.Period(FAKE_TS_16, FAKE_TS_24)
         subtests = {
             "ordered_2args_1": (p1, p3),
             "ordered_2args_2": (p2, p5),
@@ -507,40 +507,43 @@ class IntersectionTestCase(TestCase):
 
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
-                self.assertIsNone(period.intersection(*periods))
-                self.assertIsNone(period.intersection(*periods, flat=True))
+                self.assertIsNone(core.intersection(*periods))
+                self.assertIsNone(core.intersection(*periods, flat=True))
 
     def test_succeeded(self):
-        p1 = period.Period(FAKE_TS_01, FAKE_TS_08)
-        p2 = period.Period(FAKE_TS_04, FAKE_TS_12)
-        p3 = period.Period(FAKE_TS_06, FAKE_TS_16)
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_08)
+        p2 = core.Period(FAKE_TS_04, FAKE_TS_12)
+        p3 = core.Period(FAKE_TS_06, FAKE_TS_16)
         subtests = {
             "ordered_joined_2args_1": (
                 (p1, p2),
-                period.Period(FAKE_TS_04, FAKE_TS_08),
+                core.Period(FAKE_TS_04, FAKE_TS_08),
             ),
             "ordered_joined_Nargs": (
                 (p1, p2, p3),
-                period.Period(FAKE_TS_06, FAKE_TS_08),
+                core.Period(FAKE_TS_06, FAKE_TS_08),
             ),
             "reversed_joined_2args": (
                 (p2, p1),
-                period.Period(FAKE_TS_04, FAKE_TS_08),
+                core.Period(FAKE_TS_04, FAKE_TS_08),
             ),
             "reversed_joined_Nargs": (
                 (p3, p2, p1),
-                period.Period(FAKE_TS_06, FAKE_TS_08),
+                core.Period(FAKE_TS_06, FAKE_TS_08),
             ),
         }
 
         for subtest, unit in subtests.items():
             periods, expected = unit
             with self.subTest(subtest=subtest):
-                self._assert_result_period(period.intersection(*periods),
-                                           expected)
-                self._assert_result_datetime(period.intersection(*periods,
-                                                                 flat=True),
-                                             expected.as_tuple())
+                self._assert_result_period(
+                    core.intersection(*periods),
+                    expected,
+                )
+                self._assert_result_datetime(
+                    core.intersection(*periods, flat=True),
+                    expected.as_tuple(),
+                )
 
 
 if __name__ == "__main__":
