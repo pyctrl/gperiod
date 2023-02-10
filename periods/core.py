@@ -131,6 +131,15 @@ class Period(PeriodProto):
 
 # base API
 
+# TODO(d.burmistrov): wrap errors (in all validate funcs)?
+def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
+    raise NotImplementedError()
+
+
+def validate_period(period: PeriodProto) -> None:
+    validate_flat(period.start, period.end)
+
+
 def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
     if isinstance(item, datetime.datetime):
         return period.start <= item <= period.end
