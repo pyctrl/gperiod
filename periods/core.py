@@ -132,8 +132,17 @@ class Period(PeriodProto):
 # base API
 
 # TODO(d.burmistrov): wrap errors (in all validate funcs)?
+# TODO(d.burmistrov): add unit tests
+
 def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
-    raise NotImplementedError()
+    if not isinstance(start, datetime.datetime):
+        raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
+    elif not isinstance(end, datetime.datetime):
+        raise TypeError(f"'{_F_END}' must be datetime: '{type(end)}'")
+
+    if start >= end:
+        raise ValueError(f"'{_F_START}' must be '<' (before) '{_F_END}':"
+                         f" '{start}' >= '{end}'")
 
 
 def validate_period(period: PeriodProto) -> None:
