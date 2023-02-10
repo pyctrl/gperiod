@@ -1,6 +1,7 @@
 import copy
 import datetime
 import operator
+import types
 import unittest
 
 from periods import core
@@ -101,6 +102,27 @@ class PeriodBaseTestCase(TestCase):
 
         self.assertEqual(r1, r2)
         self.assertEqual(r1, expected)
+
+    def test_eq(self):
+        sns = types.SimpleNamespace(start=FAKE_TS_05, end=FAKE_TS_10)
+        p1 = core.Period(FAKE_TS_05, FAKE_TS_10)
+        p2 = core.Period(FAKE_TS_05, FAKE_TS_10)
+        p3 = core.Period(FAKE_TS_06, FAKE_TS_11)
+
+        with self.subTest(subtest="equals"):
+            self.assertTrue(p1 == p2)
+            self.assertFalse(p1 != p2)
+        with self.subTest(subtest="not_equals"):
+            self.assertTrue(p1 != p3)
+            self.assertFalse(p1 == p3)
+        with self.subTest(subtest="sns"):
+            self.assertFalse(sns == p1)
+            self.assertTrue(sns != p1)
+            self.assertFalse(sns == p3)
+            self.assertTrue(sns != p3)
+        with self.subTest(subtest="bad_type"):
+            self.assertRaises(NotImplementedError, operator.eq, p1, p1.end)
+            self.assertRaises(NotImplementedError, operator.eq, p1, 42)
 
     def test_in(self):
         p = core.Period(FAKE_TS_01, FAKE_TS_10)

@@ -52,6 +52,14 @@ class Period(PeriodProto):
     def __hash__(self):
         return hash((self.start, self.end))
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Period):
+            return self.start == other.start and self.end == other.end
+        elif hasattr(other, _F_START) and hasattr(other, _F_END):
+            return False
+        else:
+            raise NotImplementedError()
+
     def __add__(self, other: PeriodProto | datetime.timedelta
                 ) -> Period | None:  # "p1 + p2"
         if isinstance(other, datetime.timedelta):
@@ -118,11 +126,6 @@ class Period(PeriodProto):
     # TODO(d.burmistrov): duration?
     def as_dict(self) -> dict[str, datetime.datetime]:
         return dict(start=self.start, end=self.end)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Period):  # TODO(d.burmistrov): questionable
-            return NotImplemented
-        return self.start == other.start and self.end == other.end
 
 
 # base API
