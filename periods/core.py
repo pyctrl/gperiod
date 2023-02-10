@@ -8,6 +8,7 @@ import typing as t
 _F_START = "start"
 _F_END = "end"
 _T_DT_PAIR = tuple[datetime.datetime, datetime.datetime]
+_SEP = "/"
 
 _sort = operator.attrgetter(_F_START)
 
@@ -99,7 +100,7 @@ class Period(PeriodProto):
 
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
-        items = s.split("/", maxsplit=1)
+        items = s.split(_SEP, maxsplit=1)
         if len(items) != 2:
             raise ValueError("Invalid period format")
         return Period(  # type: ignore[abstract]
@@ -108,7 +109,7 @@ class Period(PeriodProto):
         )
 
     def isoformat(self, sep="T", timespec="auto") -> str:
-        return "/".join(
+        return _SEP.join(
             datetime.datetime.isoformat(item, sep=sep, timespec=timespec)
             for item in (self.start, self.end)
         )
