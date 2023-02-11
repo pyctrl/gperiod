@@ -239,7 +239,7 @@ def intersection(period: PeriodProto,
                  other: PeriodProto,
                  *others: PeriodProto,
                  flat: bool = False,
-                 ) -> t.Optional[Period | _T_DT_PAIR]:
+                 ) -> Period | _T_DT_PAIR | None:
     max_start = max(period.start, other.start)
     min_end = min(period.end, other.end)
     for p in others:
