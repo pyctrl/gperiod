@@ -119,7 +119,7 @@ class Period(PeriodProto):
     @classmethod
     def strptime(cls, period_string: str, date_format: str,
                  separator: str = _SEP) -> Period:
-        i, j = 0, len(_SEP)
+        i, j = 0, len(separator)
         strptime = datetime.datetime.strptime
         while j < len(period_string):
             if period_string[slice(i, j)] == separator:

@@ -308,6 +308,51 @@ class PeriodRepresentationTestCase(TestCase):
             with self.subTest(subtest=subtest):
                 self.assertRaises(ValueError, core.Period.fromisoformat, s)
 
+    def test_strptime_simple(self):
+        s = "2019-07-31T10:00:00/2020-01-27T10:00:00"
+        expected = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = core.Period.strptime(s, "%Y-%m-%dT%H:%M:%S")
+
+        self.assertEqual(result, expected)
+
+    def test_strptime_hard(self):
+        s = "2019-07-31//10:00:00//2020-01-27//10:00:00"
+        expected = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = core.Period.strptime(s, "%Y-%m-%d//%H:%M:%S", separator="//")
+
+        self.assertEqual(result, expected)
+
+    def test_strptime_failed(self):
+        subtests = {
+            "no_slash": "2019-07-31T10:00:002020-01-27T10:00:00",
+            "many_slashes": "2019-07-3/1T10:00:00/2020-01-27T10:00:00",
+        }
+
+        for subtest, s in subtests.items():
+            with self.subTest(subtest=subtest):
+                self.assertRaises(ValueError,
+                                  core.Period.strptime,
+                                  s,
+                                  "%Y-%m-%d/%H:%M:%S")
+
+    def test_strftime_simple(self):
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = "2019-07-31T10:00:00/2020-01-27T10:00:00"
+
+        result = p.strftime("%Y-%m-%dT%H:%M:%S")
+
+        self.assertEqual(result, expected)
+
+    def test_strftime_hard(self):
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = "2019-07-31//10:00:00//2020-01-27//10:00:00"
+
+        result = p.strftime("%Y-%m-%d//%H:%M:%S", separator="//")
+
+        self.assertEqual(result, expected)
+
 
 class PeriodConvertTestCase(TestCase):
 
