@@ -3,6 +3,7 @@ import datetime
 import operator
 import types
 import unittest
+from unittest import mock
 
 from periods import core
 
@@ -390,6 +391,41 @@ class PeriodConvertTestCase(TestCase):
 
         self.assertIsInstance(result, dict)
         self.assertEqual(result, expected)
+
+
+class ValidateFlatTestCase(TestCase):
+
+    def test_bad_type(self):
+        with self.subTest(subtest="start"):
+            self.assertRaises(TypeError, core.validate_flat, 42, FAKE_TS_10)
+            self.assertRaises(TypeError, core.validate_flat,
+                              start=42, end=FAKE_TS_10)
+        with self.subTest(subtest="end"):
+            self.assertRaises(TypeError, core.validate_flat, FAKE_TS_10, 42)
+            self.assertRaises(TypeError, core.validate_flat,
+                              start=FAKE_TS_10, end=42)
+
+    def test_bad_direction(self):
+        self.assertRaises(ValueError, core.validate_flat,
+                          FAKE_TS_10, FAKE_TS_02)
+
+    def test_bad_duration(self):
+        self.assertRaises(ValueError, core.validate_flat,
+                          FAKE_TS_10, FAKE_TS_10)
+
+    def test_ok(self):
+        core.validate_flat(FAKE_TS_05, FAKE_TS_10)
+
+
+class ValidatePeriodTestCase(TestCase):
+
+    @mock.patch("periods.core.validate_flat")
+    def test_validate(self, mock_flat):
+        p = core.Period(FAKE_TS_05, FAKE_TS_15)
+
+        core.validate_period(p)
+
+        mock_flat.assert_called_once_with(FAKE_TS_05, FAKE_TS_15)
 
 
 class WithinTestCase(TestCase):
