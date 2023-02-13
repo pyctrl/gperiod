@@ -163,6 +163,14 @@ class Period(PeriodProto):
 # TODO(d.burmistrov): wrap errors (in all validate funcs)?
 # TODO(d.burmistrov): add unit tests
 
+
+def to_timestamps(*periods: PeriodProto
+                  ) -> t.Generator[datetime.datetime, None, None]:
+    for p in periods:
+        yield p.start
+        yield p.end
+
+
 def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
     if not isinstance(start, datetime.datetime):
         raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")

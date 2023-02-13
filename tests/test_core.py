@@ -43,6 +43,10 @@ FAKE_TS_30 = datetime.datetime(2022, 1, 16, 10, 0)
 class TestCase(unittest.TestCase):
 
     def _assert_result_datetime(self, result, expected):
+        self.assertIsInstance(result, datetime.datetime)
+        self.assertEqual(result, expected)
+
+    def _assert_result_datetime_pair(self, result, expected):
         self.assertIsInstance(result, tuple)
         self.assertEqual(len(result), 2)
         self.assertIsInstance(result[0], datetime.datetime)
@@ -52,6 +56,13 @@ class TestCase(unittest.TestCase):
     def _assert_result_period(self, result, expected):
         self.assertIsInstance(result, core.Period)
         self.assertEqual(result, expected)
+
+    def _assert_generator(self, result, expected, item_validator):
+        self.assertIsInstance(result, types.GeneratorType)
+        result = list(result)
+        self.assertEqual(len(result), len(expected))
+        for r, e in zip(result, expected):
+            item_validator(r, e)
 
 
 class PeriodBaseTestCase(TestCase):
@@ -381,7 +392,7 @@ class PeriodConvertTestCase(TestCase):
 
         result = p.as_tuple()
 
-        self._assert_result_datetime(result, expected)
+        self._assert_result_datetime_pair(result, expected)
 
     def test_as_dict(self):
         p = core.Period(FAKE_TS_05, FAKE_TS_10)
@@ -491,7 +502,7 @@ class JoinTestCase(TestCase):
         result_dt = core.join(p2, p4, p3, p1, flat=True)
 
         self._assert_result_period(result_p, expected)
-        self._assert_result_datetime(result_dt, expected.as_tuple())
+        self._assert_result_datetime_pair(result_dt, expected.as_tuple())
 
     def test_not_joined(self):
         p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
@@ -578,8 +589,10 @@ class UnionTestCase(TestCase):
             periods, expected = unit
             with self.subTest(subtest=subtest):
                 self._assert_result_period(core.union(*periods), expected)
-                self._assert_result_datetime(core.union(*periods, flat=True),
-                                             expected.as_tuple())
+                self._assert_result_datetime_pair(
+                    core.union(*periods, flat=True),
+                    expected.as_tuple(),
+                )
 
 
 class IntersectionTestCase(TestCase):
@@ -643,10 +656,39 @@ class IntersectionTestCase(TestCase):
                     core.intersection(*periods),
                     expected,
                 )
-                self._assert_result_datetime(
+                self._assert_result_datetime_pair(
                     core.intersection(*periods, flat=True),
                     expected.as_tuple(),
                 )
+
+
+class ToTimestampsTestCase(TestCase):
+
+    def test_empty(self):
+        self._assert_generator(
+                    core.to_timestamps(),
+                    [],
+                    self._assert_result_datetime)
+
+    def test_single(self):
+        p = core.Period(FAKE_TS_01, FAKE_TS_02)
+
+        self._assert_generator(
+                    core.to_timestamps(p),
+                    [FAKE_TS_01, FAKE_TS_02],
+                    self._assert_result_datetime)
+
+    def test_multi(self):
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_03, FAKE_TS_04)
+        p3 = core.Period(FAKE_TS_04, FAKE_TS_05)
+        p4 = core.Period(FAKE_TS_04, FAKE_TS_05)
+
+        self._assert_generator(
+                    core.to_timestamps(p1, p2, p3, p4),
+                    [FAKE_TS_01, FAKE_TS_02, FAKE_TS_03, FAKE_TS_04,
+                     FAKE_TS_04, FAKE_TS_05, FAKE_TS_04, FAKE_TS_05],
+                    self._assert_result_datetime)
 
 
 if __name__ == "__main__":
