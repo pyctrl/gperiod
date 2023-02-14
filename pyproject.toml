@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gperiod"
+version = "0.0.1"
+authors = [
+  { name="Dima Burmistrov", email="pyctrl.dev@gmail.com" },
+]
+description = "General datetime period library"
+readme = "README.rst"
+
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ["period", "periods", "time interval", "datetime", "duration"]
+
+[project.urls]
+"Homepage" = "https://gitlab.com/pyctrl/gperiod"
+"Bug Tracker" = "https://gitlab.com/pyctrl/gperiod/-/issues"
