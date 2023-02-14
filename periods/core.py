@@ -14,12 +14,18 @@ _sort = operator.attrgetter(_F_START)
 
 
 # TODO(d.burmistrov):
+#  - [im]mutble
+#  - assert `start < end`
 #  - timezone support
+#  - wrap errors (in all validate funcs)?
 #  - review exceptions
+#  - add/review unit tests
 #  - review Period class implementation
 #  - do performance tests
-#  - assert `start < end`
-#  - treat `date` similar to `datetime`?
+#  - packaging
+#  - docstrings
+#  - readme.rst
+#  - read the docs (+examples)
 
 
 # base proto
@@ -100,12 +106,10 @@ class Period(PeriodProto):
 
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
-        items = s.split(_SEP, maxsplit=1)  # # TODO(d.burmistrov): s.partition
-        if len(items) != 2:
-            raise ValueError("Invalid period format")
+        items = s.partition(_SEP)
         return Period(  # type: ignore[abstract]
             datetime.datetime.fromisoformat(items[0]),
-            datetime.datetime.fromisoformat(items[1]),
+            datetime.datetime.fromisoformat(items[2]),
         )
 
     def isoformat(self, sep="T", timespec="auto") -> str:
@@ -113,8 +117,6 @@ class Period(PeriodProto):
             datetime.datetime.isoformat(item, sep=sep, timespec=timespec)
             for item in (self.start, self.end)
         )
-
-    # TODO(d.burmistrov): add unit tests for strp/strf-methods
 
     @classmethod
     def strptime(cls, period_string: str, date_format: str,
@@ -159,10 +161,6 @@ class Period(PeriodProto):
 
 
 # base API
-
-# TODO(d.burmistrov): wrap errors (in all validate funcs)?
-# TODO(d.burmistrov): add unit tests
-
 
 def to_timestamps(*periods: PeriodProto
                   ) -> t.Generator[datetime.datetime, None, None]:
