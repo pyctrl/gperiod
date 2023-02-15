@@ -123,20 +123,18 @@ class Period(PeriodProto):
     @classmethod
     def strptime(cls, period_string: str, date_format: str,
                  separator: str = _SEP) -> Period:
-        i, j = 0, len(separator)
         strptime = datetime.datetime.strptime
-        while j < len(period_string):
+        for i, j in zip(range(len(period_string)),
+                        range(len(separator), len(period_string))):
             if period_string[slice(i, j)] == separator:
                 try:
                     start = strptime(period_string[:i], date_format)
                     end = strptime(period_string[j:], date_format)
+                except ValueError:
+                    continue
+                else:
                     validate_flat(start, end)
                     return cls(start, end)
-                except Exception:
-                    pass
-
-            i += 1
-            j += 1
 
         raise ValueError(f"period data '{period_string}' does not match"
                          f" time format '{date_format}'"
