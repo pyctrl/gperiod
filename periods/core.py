@@ -10,7 +10,8 @@ _F_END = "end"
 _T_DT_PAIR = tuple[datetime.datetime, datetime.datetime]
 _SEP = "/"
 
-_sort = operator.attrgetter(_F_START)
+_sort_key_start = operator.attrgetter(_F_START)
+_sort_key_end = operator.attrgetter(_F_END)
 
 
 # TODO(d.burmistrov):
@@ -26,6 +27,7 @@ _sort = operator.attrgetter(_F_START)
 #  - docstrings
 #  - readme.rst
 #  - read the docs (+examples)
+#  - ensure pickling
 
 
 # base proto
@@ -179,6 +181,16 @@ def to_timestamps(*periods: PeriodProto
         yield p.end
 
 
+def sort_by_start(*periods: PeriodProto, reverse: bool = False,
+                  ) -> list[PeriodProto]:
+    return sorted(periods, key=_sort_key_start, reverse=reverse)
+
+
+def sort_by_end(*periods: PeriodProto, reverse: bool = False
+                ) -> list[PeriodProto]:
+    return sorted(periods, key=_sort_key_end, reverse=reverse)
+
+
 def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
     if not isinstance(start, datetime.datetime):
         raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
@@ -207,8 +219,8 @@ def join(period: PeriodProto,
          flat: bool = False,
          ) -> Period | _T_DT_PAIR | None:
     if others:
-        others = sorted((period, other) + others,  # type: ignore[assignment]
-                        key=_sort)
+        others = sort_by_start(period, other,  # type: ignore[assignment]
+                               *others)
         period = others[0]
         for other in others[1:]:
             if period.end == other.start:
@@ -232,8 +244,8 @@ def union(period: PeriodProto,
           flat: bool = False,
           ) -> Period | _T_DT_PAIR | None:
     if others:
-        others = sorted((period, other) + others,  # type: ignore[assignment]
-                        key=_sort)
+        others = sort_by_start(period, other,  # type: ignore[assignment]
+                               *others)
         period = others[0]
         max_end = period.end
         for other in others[1:]:
@@ -287,10 +299,10 @@ def difference(period: PeriodProto,
                ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
     if others:
         # aggregate
-        others = sorted(  # type: ignore[assignment]
-            (o for o in others + (other,)
-             if intersection(period, o, flat=True)),
-            key=_sort)
+        others = sort_by_start(  # type: ignore[assignment]
+            *(o for o in others + (other,)
+              if intersection(period, o, flat=True))
+        )
 
     if others:
         # then having one of this pictures:
