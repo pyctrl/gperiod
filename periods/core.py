@@ -159,6 +159,16 @@ class Period(PeriodProto):
     def as_dict(self) -> dict[str, datetime.datetime]:
         return dict(start=self.start, end=self.end)
 
+    def replace(self, **fields: datetime.datetime) -> Period:
+        # TODO(d.burmistrov): validate isinstance?
+        if bad := set(fields) - {_F_START, _F_END}:
+            msg = f"'{bad.pop()}' is an invalid keyword argument for replace()"
+            raise TypeError(msg)
+
+        fields.setdefault(_F_START, self.start)
+        fields.setdefault(_F_END, self.end)
+        return type(self)(**fields)
+
 
 # base API
 
