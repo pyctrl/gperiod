@@ -418,6 +418,47 @@ class PeriodConvertTestCase(TestCase):
         self.assertIsInstance(result, dict)
         self.assertEqual(result, expected)
 
+    def test_replace_empty(self):
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = p.replace()
+
+        self.assertIsInstance(result, core.Period)
+        self.assertIsNot(result, p)
+        self.assertEqual(result, p)
+
+    def test_replace_partial(self):
+        expected = core.Period(FAKE_TS_01, FAKE_TS_10)
+
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = p.replace(FAKE_TS_01)
+
+        self.assertIsInstance(result, core.Period)
+        self.assertIsNot(result, p)
+        self.assertNotEqual(result, p)
+        self.assertEqual(result, expected)
+
+    def test_replace_full(self):
+        expected = core.Period(FAKE_TS_01, FAKE_TS_06)
+
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        result = p.replace(FAKE_TS_01, end=FAKE_TS_06)
+
+        self.assertIsInstance(result, core.Period)
+        self.assertIsNot(result, p)
+        self.assertNotEqual(result, p)
+        self.assertEqual(result, expected)
+
+    def test_replace_over(self):
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+
+        self.assertRaises(TypeError, p.replace,
+                          start=FAKE_TS_01, something=FAKE_TS_06)
+        self.assertRaises(TypeError, p.replace,
+                          FAKE_TS_01, FAKE_TS_06, FAKE_TS_02)
+
 
 class ValidateFlatTestCase(TestCase):
 
