@@ -460,6 +460,43 @@ class PeriodConvertTestCase(TestCase):
                           FAKE_TS_01, FAKE_TS_06, FAKE_TS_02)
 
 
+class XscendYTestCase(TestCase):
+
+    def test_asc_start(self):
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = core.Period(FAKE_TS_03, FAKE_TS_08)
+        p4 = core.Period(FAKE_TS_08, FAKE_TS_10)
+        expected = [p1, p2, p3, p4]
+
+        with self.subTest(subtest="forward"):
+            result = core.ascend_start(p2, p3, p1, p4)
+            self.assertEqual(result, expected)
+        with self.subTest(subtest="forward_2"):
+            result = core.ascend_start(p3, p1, p4, p2, reverse=False)
+            self.assertEqual(result, expected)
+        with self.subTest(subtest="backward"):
+            result = core.ascend_start(p1, p4, p3, p2, reverse=True)
+            self.assertEqual(result, expected[::-1])
+
+    def test_desc_end(self):
+        p1 = core.Period(FAKE_TS_01, FAKE_TS_02)
+        p2 = core.Period(FAKE_TS_02, FAKE_TS_03)
+        p3 = core.Period(FAKE_TS_03, FAKE_TS_08)
+        p4 = core.Period(FAKE_TS_08, FAKE_TS_10)
+        expected = [p4, p3, p2, p1]
+
+        with self.subTest(subtest="forward"):
+            result = core.descend_end(p4, p1, p2, p3)
+            self.assertEqual(result, expected)
+        with self.subTest(subtest="forward_2"):
+            result = core.descend_end(p1, p2, p3, p4, reverse=False)
+            self.assertEqual(result, expected)
+        with self.subTest(subtest="backward"):
+            result = core.descend_end(p3, p2, p1, p4, reverse=True)
+            self.assertEqual(result, expected[::-1])
+
+
 class ValidateFlatTestCase(TestCase):
 
     def test_bad_type(self):

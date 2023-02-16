@@ -182,14 +182,14 @@ def to_timestamps(*periods: PeriodProto
         yield p.end
 
 
-def sort_by_start(*periods: PeriodProto, reverse: bool = False,
-                  ) -> list[PeriodProto]:
+def ascend_start(*periods: PeriodProto, reverse: bool = False,
+                 ) -> list[PeriodProto]:
     return sorted(periods, key=_sort_key_start, reverse=reverse)
 
 
-def sort_by_end(*periods: PeriodProto, reverse: bool = False
+def descend_end(*periods: PeriodProto, reverse: bool = False,
                 ) -> list[PeriodProto]:
-    return sorted(periods, key=_sort_key_end, reverse=reverse)
+    return sorted(periods, key=_sort_key_end, reverse=(not reverse))
 
 
 def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
@@ -220,8 +220,8 @@ def join(period: PeriodProto,
          flat: bool = False,
          ) -> Period | _T_DT_PAIR | None:
     if others:
-        others = sort_by_start(period, other,  # type: ignore[assignment]
-                               *others)
+        others = ascend_start(period, other,  # type: ignore[assignment]
+                              *others)
         period = others[0]
         for other in others[1:]:
             if period.end == other.start:
@@ -245,8 +245,8 @@ def union(period: PeriodProto,
           flat: bool = False,
           ) -> Period | _T_DT_PAIR | None:
     if others:
-        others = sort_by_start(period, other,  # type: ignore[assignment]
-                               *others)
+        others = ascend_start(period, other,  # type: ignore[assignment]
+                              *others)
         period = others[0]
         max_end = period.end
         for other in others[1:]:
@@ -300,7 +300,7 @@ def difference(period: PeriodProto,
                ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
     if others:
         # aggregate
-        others = sort_by_start(  # type: ignore[assignment]
+        others = ascend_start(  # type: ignore[assignment]
             *(o for o in others + (other,)
               if intersection(period, o, flat=True))
         )
