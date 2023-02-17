@@ -354,15 +354,13 @@ class Period(object):
     __sub__ = sub
     __rsub__ = sub
 
-    def __and__(self, other: PeriodProto) -> Period | None:  # "p1 & p2"
-        return intersection(self, other)  # type: ignore[return-value]
+    # "p1 & p2"
+    __and__ = intersection
+    __rand__ = intersection
 
-    __rand__ = __and__
-
-    def __or__(self, other: PeriodProto) -> Period | None:  # "p1 | p2"
-        return union(self, other)  # type: ignore[return-value]
-
-    __ror__ = __or__
+    # "p1 | p2"
+    __or__ = union
+    __ror__ = union
 
     def __lshift__(self, other: datetime.timedelta) -> Period:  # "p << delta"
         if isinstance(other, datetime.timedelta):
