@@ -7,6 +7,7 @@ import typing as t
 
 _F_START = "start"
 _F_END = "end"
+_F__DURATION = "_duration"
 _T_DT_PAIR = tuple[datetime.datetime, datetime.datetime]
 _SEP = "/"
 
@@ -42,12 +43,19 @@ class Period(object):
     start: datetime.datetime
     end: datetime.datetime
 
-    __slots__ = (_F_START, _F_END)
+    __slots__ = (_F_START, _F_END, _F__DURATION)
 
     def __init__(self, start: datetime.datetime, end: datetime.datetime):
         object.__setattr__(self, _F_START, start)
         object.__setattr__(self, _F_END, end)
-        # TODO(d.burmistrov): self.duration = end - start
+
+    @property
+    def duration(self) -> datetime.timedelta:
+        try:
+            return getattr(self, _F__DURATION)
+        except AttributeError:
+            object.__setattr__(self, _F__DURATION, self.end - self.start)
+            return getattr(self, _F__DURATION)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.start!r}, {self.end!r})"
@@ -153,9 +161,11 @@ class Period(object):
     def as_tuple(self) -> tuple[datetime.datetime, datetime.datetime]:
         return self.start, self.end
 
-    # TODO(d.burmistrov): duration?
-    def as_dict(self) -> dict[str, datetime.datetime]:
+    def as_kwargs(self) -> dict[str, datetime.datetime]:
         return dict(start=self.start, end=self.end)
+
+    def as_dict(self) -> dict[str, datetime.datetime | datetime.timedelta]:
+        return dict(start=self.start, end=self.end, duration=self.duration)
 
     def replace(self,
                 start: t.Optional[datetime.datetime] = None,

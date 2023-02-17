@@ -409,9 +409,18 @@ class PeriodConvertTestCase(TestCase):
 
         self._assert_result_datetime_pair(result, expected)
 
-    def test_as_dict(self):
+    def test_as_kwargs(self):
         p = core.Period(FAKE_TS_05, FAKE_TS_10)
         expected = dict(start=p.start, end=p.end)
+
+        result = p.as_kwargs()
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, expected)
+
+    def test_as_dict(self):
+        p = core.Period(FAKE_TS_05, FAKE_TS_10)
+        expected = dict(start=p.start, end=p.end, duration=p.duration)
 
         result = p.as_dict()
 
