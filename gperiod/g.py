@@ -45,7 +45,12 @@ class Period(object):
 
     __slots__ = (_F_START, _F_END, _F__DURATION)
 
-    def __init__(self, start: datetime.datetime, end: datetime.datetime):
+    def __init__(self,
+                 start: datetime.datetime,
+                 end: datetime.datetime,
+                 validate: bool = True):
+        if validate:
+            validate_flat(start, end)
         object.__setattr__(self, _F_START, start)
         object.__setattr__(self, _F_END, end)
 
@@ -83,7 +88,7 @@ class Period(object):
     def __add__(self, other: PeriodProto | datetime.timedelta
                 ) -> Period | None:  # "p1 + p2"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start, self.end + other)
+            return Period(self.start, self.end + other, False)
 
         return join(self, other)  # type: ignore[return-value]
 
@@ -101,13 +106,13 @@ class Period(object):
 
     def __lshift__(self, other: datetime.timedelta) -> Period:  # "p << delta"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start - other, self.end - other)
+            return Period(self.start - other, self.end - other, False)
 
         raise NotImplementedError()
 
     def __rshift__(self, other: datetime.timedelta) -> Period:  # "p >> delta"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start + other, self.end + other)
+            return Period(self.start + other, self.end + other, False)
 
         raise NotImplementedError()
 
@@ -117,8 +122,8 @@ class Period(object):
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.partition(_SEP)
-        return Period(datetime.datetime.fromisoformat(items[0]),
-                      datetime.datetime.fromisoformat(items[2]))
+        fromisoformat = datetime.datetime.fromisoformat
+        return Period(fromisoformat(items[0]), fromisoformat(items[2]))
 
     def isoformat(self, sep="T", timespec="auto") -> str:
         return _SEP.join(
@@ -139,7 +144,6 @@ class Period(object):
                 except ValueError:
                     continue
                 else:
-                    validate_flat(start, end)
                     return cls(start, end)
 
         raise ValueError(f"period data '{period_string}' does not match"
@@ -153,10 +157,10 @@ class Period(object):
 
     # TODO(d.burmistrov): __deepcopy__
     def __copy__(self) -> Period:
-        return Period(self.start, self.end)
+        return Period(self.start, self.end, False)
 
     def copy(self) -> Period:
-        return Period(self.start, self.end)
+        return Period(self.start, self.end, False)
 
     def as_tuple(self) -> tuple[datetime.datetime, datetime.datetime]:
         return self.start, self.end
@@ -243,7 +247,7 @@ def join(period: PeriodProto,
     else:
         return None
 
-    return result if flat else Period(*result)
+    return result if flat else Period(*result, False)
 
 
 def union(period: PeriodProto,
@@ -268,7 +272,7 @@ def union(period: PeriodProto,
     else:
         return join(period, other, flat=flat)
 
-    return result if flat else Period(*result)
+    return result if flat else Period(*result, False)
 
 
 def intersection(period: PeriodProto,
@@ -292,7 +296,7 @@ def intersection(period: PeriodProto,
 
 def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
           ) -> Period | tuple[datetime.datetime, datetime.datetime]:
-    return (start, end) if flat else Period(start, end)
+    return (start, end) if flat else Period(start, end, False)
 
 
 def difference(period: PeriodProto,

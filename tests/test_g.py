@@ -534,7 +534,7 @@ class ValidatePeriodTestCase(TestCase):
 
     @mock.patch("gperiod.g.validate_flat")
     def test_validate(self, mock_flat):
-        p = g.Period(FAKE_TS_05, FAKE_TS_15)
+        p = g.Period(FAKE_TS_05, FAKE_TS_15, False)
 
         g.validate_period(p)
 
