@@ -205,19 +205,19 @@ def difference(period: PeriodProto,
         cross = others[0]
         # first
         if period.start < cross.start:
-            yield _conv(period.start, cross.start, flat=flat)
+            yield _conv(period.start, cross.start, flat)
 
         # aggregate + mids
         for item in others[1:]:
             if x := union(item, cross):
                 cross = t.cast(PeriodProto, x)
             else:
-                yield _conv(cross.end, item.start, flat=flat)
+                yield _conv(cross.end, item.start, flat)
                 cross = item
 
         # last
         if period.end > cross.end:
-            yield _conv(cross.end, period.end, flat=flat)
+            yield _conv(cross.end, period.end, flat)
 
     elif x := intersection(period, other, flat=True):
         # I.
@@ -232,15 +232,15 @@ def difference(period: PeriodProto,
 
         start, end = t.cast(_T_DT_PAIR, x)
         if period.start < start:  # I./II. left
-            yield _conv(start=period.start, end=start, flat=flat)
+            yield _conv(period.start, start, flat)
             if period.end > end:  # I. right
-                yield _conv(start=end, end=period.end, flat=flat)
+                yield _conv(end, period.end, flat)
         elif period.end != end:  # III. right
-            yield _conv(start=end, end=period.end, flat=flat)
+            yield _conv(end, period.end, flat)
         # no `else` -- because `cross` equals `period`
 
     else:
-        yield _conv(start=period.start, end=period.end, flat=flat)
+        yield _conv(period.start, period.end, flat)
 
 
 # base entity
