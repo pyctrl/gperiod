@@ -280,12 +280,6 @@ class Period(object):
             return cls(edge - duration, edge, validate=validate)
         return cls(edge, edge + duration, validate=validate)
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.start!r}, {self.end!r})"
-
-    def __str__(self):
-        return self.isoformat()
-
     def __setattr__(self, key, value):
         raise NotImplementedError("method not allowed")
 
@@ -371,6 +365,11 @@ class Period(object):
         return (self.start.strftime(date_fmt)
                 + separator
                 + self.end.strftime(date_fmt))
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.start!r}, {self.end!r})"
+
+    __str__ = isoformat
 
     # TODO(d.burmistrov): __deepcopy__
     def __copy__(self) -> Period:
