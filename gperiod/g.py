@@ -283,6 +283,17 @@ def sub(period: PeriodProto,
         raise ValueError()
 
 
+# I.  "p * number"
+def mul(period: PeriodProto, factor: int | float, flat: bool = False,
+        ) -> Period | _T_DT_PAIR | None:
+    if factor <= 0:
+        return None
+
+    return _conv(period.start,
+                 period.start + ((period.end - period.start) * factor),
+                 flat)
+
+
 # base entity
 
 class Period(object):
