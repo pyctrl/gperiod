@@ -243,6 +243,17 @@ def difference(period: PeriodProto,
         yield _conv(period.start, period.end, flat)
 
 
+# math operations
+
+# "p1 + p2"
+def add(period: PeriodProto, other: PeriodProto, flat: bool = False,
+        ) -> Period | _T_DT_PAIR | None:
+    if isinstance(other, datetime.timedelta):
+        return _conv(period.start, period.end + other, flat)
+
+    return join(period, other, flat=flat)
+
+
 # base entity
 
 class Period(object):
@@ -297,14 +308,8 @@ class Period(object):
         else:
             raise NotImplementedError()
 
-    def __add__(self, other: PeriodProto | datetime.timedelta
-                ) -> Period | None:  # "p1 + p2"
-        if isinstance(other, datetime.timedelta):
-            return Period(self.start, self.end + other, False)
-
-        return join(self, other)  # type: ignore[return-value]
-
-    __radd__ = __add__
+    __add__ = add
+    __radd__ = add
 
     def __and__(self, other: PeriodProto) -> Period | None:  # "p1 & p2"
         return intersection(self, other)  # type: ignore[return-value]
