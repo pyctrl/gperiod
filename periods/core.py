@@ -15,7 +15,7 @@ _sort_key_end = operator.attrgetter(_F_END)
 
 
 # TODO(d.burmistrov):
-#  - [im]mutble
+#  - [im]mutable
 #  - assert `start < end`
 #  - timezone support
 #  - wrap errors (in all validate funcs)?
@@ -37,7 +37,10 @@ class PeriodProto(t.Protocol):
     end: datetime.datetime
 
 
-class Period(PeriodProto):
+class Period(object):
+
+    start: datetime.datetime
+    end: datetime.datetime
 
     __slots__ = (_F_START, _F_END)
 
@@ -72,10 +75,9 @@ class Period(PeriodProto):
     def __add__(self, other: PeriodProto | datetime.timedelta
                 ) -> Period | None:  # "p1 + p2"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start,  # type: ignore[abstract]
-                          self.end + other)
-        else:
-            return join(self, other)  # type: ignore[return-value]
+            return Period(self.start, self.end + other)
+
+        return join(self, other)  # type: ignore[return-value]
 
     __radd__ = __add__
 
@@ -91,17 +93,15 @@ class Period(PeriodProto):
 
     def __lshift__(self, other: datetime.timedelta) -> Period:  # "p << delta"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start - other,  # type: ignore[abstract]
-                          self.end - other)
-        else:
-            raise NotImplementedError
+            return Period(self.start - other, self.end - other)
+
+        raise NotImplementedError()
 
     def __rshift__(self, other: datetime.timedelta) -> Period:  # "p >> delta"
         if isinstance(other, datetime.timedelta):
-            return Period(self.start + other,  # type: ignore[abstract]
-                          self.end + other)
-        else:
-            raise NotImplementedError
+            return Period(self.start + other, self.end + other)
+
+        raise NotImplementedError()
 
     def __contains__(self, item: PeriodProto | datetime.datetime) -> bool:
         return within(self, item)
@@ -109,10 +109,8 @@ class Period(PeriodProto):
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
         items = s.partition(_SEP)
-        return Period(  # type: ignore[abstract]
-            datetime.datetime.fromisoformat(items[0]),
-            datetime.datetime.fromisoformat(items[2]),
-        )
+        return Period(datetime.datetime.fromisoformat(items[0]),
+                      datetime.datetime.fromisoformat(items[2]))
 
     def isoformat(self, sep="T", timespec="auto") -> str:
         return _SEP.join(
@@ -147,10 +145,10 @@ class Period(PeriodProto):
 
     # TODO(d.burmistrov): __deepcopy__
     def __copy__(self) -> Period:
-        return Period(self.start, self.end)  # type: ignore[abstract]
+        return Period(self.start, self.end)
 
     def copy(self) -> Period:
-        return Period(self.start, self.end)  # type: ignore[abstract]
+        return Period(self.start, self.end)
 
     def as_tuple(self) -> tuple[datetime.datetime, datetime.datetime]:
         return self.start, self.end
@@ -210,8 +208,8 @@ def validate_period(period: PeriodProto) -> None:
 def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
     if isinstance(item, datetime.datetime):
         return period.start <= item <= period.end
-    else:
-        return (period.start <= item.start) and (item.end <= period.end)
+
+    return (period.start <= item.start) and (item.end <= period.end)
 
 
 def join(period: PeriodProto,
@@ -224,10 +222,9 @@ def join(period: PeriodProto,
                               *others)
         period = others[0]
         for other in others[1:]:
-            if period.end == other.start:
-                period = other
-            else:
+            if period.end != other.start:
                 return None
+            period = other
         result = (others[0].start, others[-1].end)
     elif period.end == other.start:  # `p1` on the left
         result = (period.start, other.end)
@@ -236,7 +233,7 @@ def join(period: PeriodProto,
     else:
         return None
 
-    return result if flat else Period(*result)  # type: ignore[abstract]
+    return result if flat else Period(*result)
 
 
 def union(period: PeriodProto,
@@ -261,7 +258,7 @@ def union(period: PeriodProto,
     else:
         return join(period, other, flat=flat)
 
-    return result if flat else Period(*result)  # type: ignore[abstract]
+    return result if flat else Period(*result)
 
 
 def intersection(period: PeriodProto,
@@ -279,18 +276,13 @@ def intersection(period: PeriodProto,
 
     if max_start >= min_end:
         return None
-    elif flat:
-        return max_start, min_end
-    else:
-        return Period(max_start, min_end)  # type: ignore[abstract]
+
+    return _conv(max_start, min_end, flat)
 
 
 def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
           ) -> Period | tuple[datetime.datetime, datetime.datetime]:
-    if flat:
-        return start, end
-    else:
-        return Period(start, end)  # type: ignore[abstract]
+    return (start, end) if flat else Period(start, end)
 
 
 def difference(period: PeriodProto,
@@ -341,7 +333,7 @@ def difference(period: PeriodProto,
         if period.end > cross.end:
             yield _conv(cross.end, period.end, flat=flat)
 
-    elif the_x := intersection(period, other, flat=True):
+    elif x := intersection(period, other, flat=True):
         # I.
         #   |-----p-----|
         #      |--i--|
@@ -352,7 +344,7 @@ def difference(period: PeriodProto,
         #   |-----p-----|
         #   |--l--|
 
-        start, end = t.cast(_T_DT_PAIR, the_x)
+        start, end = t.cast(_T_DT_PAIR, x)
         if period.start < start:  # I./II. left
             yield _conv(start=period.start, end=start, flat=flat)
             if period.end > end:  # I. right
