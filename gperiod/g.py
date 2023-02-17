@@ -245,13 +245,32 @@ def difference(period: PeriodProto,
 
 # math operations
 
-# "p1 + p2"
+# I.  "p + timedelta"
+# II. "p1 + p2"
 def add(period: PeriodProto, other: PeriodProto, flat: bool = False,
         ) -> Period | _T_DT_PAIR | None:
     if isinstance(other, datetime.timedelta):
         return _conv(period.start, period.end + other, flat)
 
     return join(period, other, flat=flat)
+
+
+# I.  "p - timedelta"
+# II. "p1 - p2"
+def sub(period: PeriodProto, other: PeriodProto, flat: bool = False,
+        ):
+    if isinstance(other, datetime.timedelta):
+        end = period.end - other
+        validate_flat(period.start, end)
+        return _conv(period.start, end, flat)
+
+    # TODO(d.burmistrov): extract this to `cut(period, other, *others, ...)`
+    if period.start == other.start:
+        return Period(other.end, period.end)
+    elif period.end == other.end:
+        return Period(period.start, other.start)
+    else:
+        raise ValueError()
 
 
 # base entity
@@ -310,6 +329,9 @@ class Period(object):
 
     __add__ = add
     __radd__ = add
+
+    __sub__ = sub
+    __rsub__ = sub
 
     def __and__(self, other: PeriodProto) -> Period | None:  # "p1 & p2"
         return intersection(self, other)  # type: ignore[return-value]
