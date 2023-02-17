@@ -247,22 +247,32 @@ def difference(period: PeriodProto,
 
 # I.  "p + timedelta"
 # II. "p1 + p2"
-def add(period: PeriodProto, other: PeriodProto, flat: bool = False,
+def add(period: PeriodProto,
+        other: PeriodProto | datetime.timedelta,
+        flat: bool = False,
         ) -> Period | _T_DT_PAIR | None:
     if isinstance(other, datetime.timedelta):
-        return _conv(period.start, period.end + other, flat)
+        if not other.total_seconds():
+            return _conv(period.start, period.end, flat)
+        elif other.total_seconds() > 0:
+            return _conv(period.start, period.end + other, flat)
+        else:
+            end = period.end + other
+            validate_flat(period.start, end)
+            return _conv(period.start, end, flat)
 
     return join(period, other, flat=flat)
+# TODO(d.burmistrov): decorator to raise on None result & add wrapped API funcs
 
 
 # I.  "p - timedelta"
 # II. "p1 - p2"
-def sub(period: PeriodProto, other: PeriodProto, flat: bool = False,
-        ):
+def sub(period: PeriodProto,
+        other: PeriodProto | datetime.timedelta,
+        flat: bool = False,
+        ) -> Period | _T_DT_PAIR | None:
     if isinstance(other, datetime.timedelta):
-        end = period.end - other
-        validate_flat(period.start, end)
-        return _conv(period.start, end, flat)
+        return add(period, -other, flat)
 
     # TODO(d.burmistrov): extract this to `cut(period, other, *others, ...)`
     if period.start == other.start:
