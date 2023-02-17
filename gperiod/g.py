@@ -38,6 +38,13 @@ class PeriodProto(t.Protocol):
     end: datetime.datetime
 
 
+def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
+    if isinstance(item, datetime.datetime):
+        return period.start <= item <= period.end
+
+    return (period.start <= item.start) and (item.end <= period.end)
+
+
 class Period(object):
 
     start: datetime.datetime
@@ -127,8 +134,7 @@ class Period(object):
 
         raise NotImplementedError()
 
-    def __contains__(self, item: PeriodProto | datetime.datetime) -> bool:
-        return within(self, item)
+    __contains__ = within
 
     @classmethod
     def fromisoformat(cls, s: str) -> Period:
@@ -196,7 +202,7 @@ class Period(object):
         return type(self)(start=start, end=end)
 
 
-# base API
+# misc
 
 def to_timestamps(*periods: PeriodProto
                   ) -> t.Generator[datetime.datetime, None, None]:
@@ -241,13 +247,6 @@ def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
 
 def validate_period(period: PeriodProto) -> None:
     validate_flat(period.start, period.end)
-
-
-def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
-    if isinstance(item, datetime.datetime):
-        return period.start <= item <= period.end
-
-    return (period.start <= item.start) and (item.end <= period.end)
 
 
 def join(period: PeriodProto,
