@@ -296,6 +296,19 @@ def mul(period: PeriodProto, factor: int | float, flat: bool = False,
 
 # extras
 
+# TODO(d.burmistrov): naming - match?
+def equals(period: PeriodProto, other: PeriodProto, *others: PeriodProto
+           ) -> bool:
+    dts = {period.start, period.end}
+    if (other.start not in dts) or (other.end not in dts):
+        return False
+    for p in others:
+        if (p.start not in dts) or (p.end not in dts):
+            return False
+
+    return True
+
+
 # "p << delta"
 def lshift(period: PeriodProto,
            other: datetime.timedelta,
