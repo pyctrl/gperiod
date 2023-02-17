@@ -294,6 +294,30 @@ def mul(period: PeriodProto, factor: int | float, flat: bool = False,
                  flat)
 
 
+# extras
+
+# "p << delta"
+def lshift(period: PeriodProto,
+           other: datetime.timedelta,
+           flat: bool = False,
+           ) -> Period | _T_DT_PAIR:
+    if isinstance(other, datetime.timedelta):
+        return _conv(period.start - other, period.end - other, flat)
+
+    raise NotImplementedError()
+
+
+# "p >> delta"
+def rshift(period: PeriodProto,
+           other: datetime.timedelta,
+           flat: bool = False,
+           ) -> Period | _T_DT_PAIR:
+    if isinstance(other, datetime.timedelta):
+        return _conv(period.start + other, period.end + other, flat)
+
+    raise NotImplementedError()
+
+
 # base entity
 
 class Period(object):
@@ -362,17 +386,8 @@ class Period(object):
     __or__ = union
     __ror__ = union
 
-    def __lshift__(self, other: datetime.timedelta) -> Period:  # "p << delta"
-        if isinstance(other, datetime.timedelta):
-            return Period(self.start - other, self.end - other, False)
-
-        raise NotImplementedError()
-
-    def __rshift__(self, other: datetime.timedelta) -> Period:  # "p >> delta"
-        if isinstance(other, datetime.timedelta):
-            return Period(self.start + other, self.end + other, False)
-
-        raise NotImplementedError()
+    __lshift__ = lshift
+    __rshift__ = rshift
 
     __contains__ = within
 
