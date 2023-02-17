@@ -38,12 +38,212 @@ class PeriodProto(t.Protocol):
     end: datetime.datetime
 
 
+# misc
+
+def to_timestamps(*periods: PeriodProto
+                  ) -> t.Generator[datetime.datetime, None, None]:
+    for p in periods:
+        yield p.start
+        yield p.end
+
+
+# sorting
+
+def ascend_start(*periods: PeriodProto, reverse: bool = False,
+                 ) -> list[PeriodProto]:
+    return sorted(periods, key=_sort_key_start, reverse=reverse)
+
+
+def descend_end(*periods: PeriodProto, reverse: bool = False,
+                ) -> list[PeriodProto]:
+    return sorted(periods, key=_sort_key_end, reverse=(not reverse))
+
+
+# validation
+
+def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
+    # types
+    if not isinstance(start, datetime.datetime):
+        raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
+    elif not isinstance(end, datetime.datetime):
+        raise TypeError(f"'{_F_END}' must be datetime: '{type(end)}'")
+
+    # timezones
+    start_offset = start.utcoffset()
+    end_offset = end.utcoffset()
+    if start_offset is None:
+        if end_offset is not None:
+            msg = f"Can't mix naive ({_F_START}) and aware ({_F_END}) edges"
+            raise ValueError(msg)
+    elif end_offset is None:
+        msg = f"Can't mix naive ({_F_END}) and aware ({_F_START}) edges"
+        raise ValueError(msg)
+
+    # values
+    if start >= end:
+        raise ValueError(f"'{_F_START}' must be '<' (before) '{_F_END}':"
+                         f" '{start}' >= '{end}'")
+
+
+def validate_period(period: PeriodProto) -> None:
+    validate_flat(period.start, period.end)
+
+
+# ~set proto
+
+def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
+          ) -> Period | tuple[datetime.datetime, datetime.datetime]:
+    return (start, end) if flat else Period(start, end, False)
+
+
 def within(period: PeriodProto, item: datetime.datetime | PeriodProto) -> bool:
     if isinstance(item, datetime.datetime):
         return period.start <= item <= period.end
 
     return (period.start <= item.start) and (item.end <= period.end)
 
+
+def join(period: PeriodProto,
+         other: PeriodProto,
+         *others: PeriodProto,
+         flat: bool = False,
+         ) -> Period | _T_DT_PAIR | None:
+    if others:
+        others = ascend_start(period, other,  # type: ignore[assignment]
+                              *others)
+        period = others[0]
+        for other in others[1:]:
+            if period.end != other.start:
+                return None
+            period = other
+        result = (others[0].start, others[-1].end)
+    elif period.end == other.start:  # `p1` on the left
+        result = (period.start, other.end)
+    elif period.start == other.end:  # `p1` on the right
+        result = (other.start, period.end)
+    else:
+        return None
+
+    return result if flat else Period(*result, False)
+
+
+def union(period: PeriodProto,
+          other: PeriodProto,
+          *others: PeriodProto,
+          flat: bool = False,
+          ) -> Period | _T_DT_PAIR | None:
+    if others:
+        others = ascend_start(period, other,  # type: ignore[assignment]
+                              *others)
+        period = others[0]
+        max_end = period.end
+        for other in others[1:]:
+            if within(period, other.start):
+                period = other
+                max_end = max(other.end, max_end)
+            else:
+                return None
+        result = (others[0].start, max_end)
+    elif intersection(period, other, flat=True):
+        result = (min(period.start, other.start), max(period.end, other.end))
+    else:
+        return join(period, other, flat=flat)
+
+    return result if flat else Period(*result, False)
+
+
+def intersection(period: PeriodProto,
+                 other: PeriodProto,
+                 *others: PeriodProto,
+                 flat: bool = False,
+                 ) -> Period | _T_DT_PAIR | None:
+    max_start = max(period.start, other.start)
+    min_end = min(period.end, other.end)
+    for p in others:
+        if max_start >= min_end:
+            return None
+        max_start = max(p.start, max_start)
+        min_end = min(p.end, min_end)
+
+    if max_start >= min_end:
+        return None
+
+    return _conv(max_start, min_end, flat)
+
+
+def difference(period: PeriodProto,
+               other: PeriodProto,
+               *others: PeriodProto,
+               flat: bool = False,
+               ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
+    if others:
+        # aggregate
+        others = ascend_start(  # type: ignore[assignment]
+            *(o for o in others + (other,)
+              if intersection(period, o, flat=True))
+        )
+
+    if others:
+        # then having one of this pictures:
+        #
+        #   I.
+        #       |-----------------------|
+        #     |------|  |----| |--|  |-----|
+        #
+        #   II.
+        #       |-----------------------|
+        #         |--|  |----| |--|  |-----|
+        #
+        #   III.
+        #       |-----------------------|
+        #     |------|  |----| |--| |-|
+        #
+        #   IV.
+        #       |-----------------------|
+        #         |--|  |----| |--| |-|
+
+        cross = others[0]
+        # first
+        if period.start < cross.start:
+            yield _conv(period.start, cross.start, flat=flat)
+
+        # aggregate + mids
+        for item in others[1:]:
+            if x := union(item, cross):
+                cross = t.cast(PeriodProto, x)
+            else:
+                yield _conv(cross.end, item.start, flat=flat)
+                cross = item
+
+        # last
+        if period.end > cross.end:
+            yield _conv(cross.end, period.end, flat=flat)
+
+    elif x := intersection(period, other, flat=True):
+        # I.
+        #   |-----p-----|
+        #      |--i--|
+        # II.
+        #   |-----p-----|
+        #         |--r--|
+        # III.
+        #   |-----p-----|
+        #   |--l--|
+
+        start, end = t.cast(_T_DT_PAIR, x)
+        if period.start < start:  # I./II. left
+            yield _conv(start=period.start, end=start, flat=flat)
+            if period.end > end:  # I. right
+                yield _conv(start=end, end=period.end, flat=flat)
+        elif period.end != end:  # III. right
+            yield _conv(start=end, end=period.end, flat=flat)
+        # no `else` -- because `cross` equals `period`
+
+    else:
+        yield _conv(start=period.start, end=period.end, flat=flat)
+
+
+# base entity
 
 class Period(object):
 
@@ -200,195 +400,3 @@ class Period(object):
             end = self.end
 
         return type(self)(start=start, end=end)
-
-
-# misc
-
-def to_timestamps(*periods: PeriodProto
-                  ) -> t.Generator[datetime.datetime, None, None]:
-    for p in periods:
-        yield p.start
-        yield p.end
-
-
-def ascend_start(*periods: PeriodProto, reverse: bool = False,
-                 ) -> list[PeriodProto]:
-    return sorted(periods, key=_sort_key_start, reverse=reverse)
-
-
-def descend_end(*periods: PeriodProto, reverse: bool = False,
-                ) -> list[PeriodProto]:
-    return sorted(periods, key=_sort_key_end, reverse=(not reverse))
-
-
-def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
-    # types
-    if not isinstance(start, datetime.datetime):
-        raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
-    elif not isinstance(end, datetime.datetime):
-        raise TypeError(f"'{_F_END}' must be datetime: '{type(end)}'")
-
-    # timezones
-    start_offset = start.utcoffset()
-    end_offset = end.utcoffset()
-    if start_offset is None:
-        if end_offset is not None:
-            msg = f"Can't mix naive ({_F_START}) and aware ({_F_END}) edges"
-            raise ValueError(msg)
-    elif end_offset is None:
-        msg = f"Can't mix naive ({_F_END}) and aware ({_F_START}) edges"
-        raise ValueError(msg)
-
-    # values
-    if start >= end:
-        raise ValueError(f"'{_F_START}' must be '<' (before) '{_F_END}':"
-                         f" '{start}' >= '{end}'")
-
-
-def validate_period(period: PeriodProto) -> None:
-    validate_flat(period.start, period.end)
-
-
-def join(period: PeriodProto,
-         other: PeriodProto,
-         *others: PeriodProto,
-         flat: bool = False,
-         ) -> Period | _T_DT_PAIR | None:
-    if others:
-        others = ascend_start(period, other,  # type: ignore[assignment]
-                              *others)
-        period = others[0]
-        for other in others[1:]:
-            if period.end != other.start:
-                return None
-            period = other
-        result = (others[0].start, others[-1].end)
-    elif period.end == other.start:  # `p1` on the left
-        result = (period.start, other.end)
-    elif period.start == other.end:  # `p1` on the right
-        result = (other.start, period.end)
-    else:
-        return None
-
-    return result if flat else Period(*result, False)
-
-
-def union(period: PeriodProto,
-          other: PeriodProto,
-          *others: PeriodProto,
-          flat: bool = False,
-          ) -> Period | _T_DT_PAIR | None:
-    if others:
-        others = ascend_start(period, other,  # type: ignore[assignment]
-                              *others)
-        period = others[0]
-        max_end = period.end
-        for other in others[1:]:
-            if within(period, other.start):
-                period = other
-                max_end = max(other.end, max_end)
-            else:
-                return None
-        result = (others[0].start, max_end)
-    elif intersection(period, other, flat=True):
-        result = (min(period.start, other.start), max(period.end, other.end))
-    else:
-        return join(period, other, flat=flat)
-
-    return result if flat else Period(*result, False)
-
-
-def intersection(period: PeriodProto,
-                 other: PeriodProto,
-                 *others: PeriodProto,
-                 flat: bool = False,
-                 ) -> Period | _T_DT_PAIR | None:
-    max_start = max(period.start, other.start)
-    min_end = min(period.end, other.end)
-    for p in others:
-        if max_start >= min_end:
-            return None
-        max_start = max(p.start, max_start)
-        min_end = min(p.end, min_end)
-
-    if max_start >= min_end:
-        return None
-
-    return _conv(max_start, min_end, flat)
-
-
-def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
-          ) -> Period | tuple[datetime.datetime, datetime.datetime]:
-    return (start, end) if flat else Period(start, end, False)
-
-
-def difference(period: PeriodProto,
-               other: PeriodProto,
-               *others: PeriodProto,
-               flat: bool = False,
-               ) -> t.Generator[(Period | _T_DT_PAIR), None, None]:
-    if others:
-        # aggregate
-        others = ascend_start(  # type: ignore[assignment]
-            *(o for o in others + (other,)
-              if intersection(period, o, flat=True))
-        )
-
-    if others:
-        # then having one of this pictures:
-        #
-        #   I.
-        #       |-----------------------|
-        #     |------|  |----| |--|  |-----|
-        #
-        #   II.
-        #       |-----------------------|
-        #         |--|  |----| |--|  |-----|
-        #
-        #   III.
-        #       |-----------------------|
-        #     |------|  |----| |--| |-|
-        #
-        #   IV.
-        #       |-----------------------|
-        #         |--|  |----| |--| |-|
-
-        cross = others[0]
-        # first
-        if period.start < cross.start:
-            yield _conv(period.start, cross.start, flat=flat)
-
-        # aggregate + mids
-        for item in others[1:]:
-            if x := union(item, cross):
-                cross = t.cast(PeriodProto, x)
-            else:
-                yield _conv(cross.end, item.start, flat=flat)
-                cross = item
-
-        # last
-        if period.end > cross.end:
-            yield _conv(cross.end, period.end, flat=flat)
-
-    elif x := intersection(period, other, flat=True):
-        # I.
-        #   |-----p-----|
-        #      |--i--|
-        # II.
-        #   |-----p-----|
-        #         |--r--|
-        # III.
-        #   |-----p-----|
-        #   |--l--|
-
-        start, end = t.cast(_T_DT_PAIR, x)
-        if period.start < start:  # I./II. left
-            yield _conv(start=period.start, end=start, flat=flat)
-            if period.end > end:  # I. right
-                yield _conv(start=end, end=period.end, flat=flat)
-        elif period.end != end:  # III. right
-            yield _conv(start=end, end=period.end, flat=flat)
-        # no `else` -- because `cross` equals `period`
-
-    else:
-        yield _conv(start=period.start, end=period.end, flat=flat)
