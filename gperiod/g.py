@@ -294,6 +294,38 @@ def mul(period: PeriodProto, factor: int | float, flat: bool = False,
                  flat)
 
 
+and_ = intersection
+or_ = union
+contains = within
+
+
+def floordiv(period: PeriodProto, other: datetime.timedelta | int
+             ) -> datetime.timedelta | int:
+    if isinstance(other, (datetime.timedelta, int)):
+        return (period.end - period.start) // other
+
+    raise NotImplementedError()
+
+
+def mod(period: PeriodProto, other: datetime.timedelta) -> datetime.timedelta:
+    if isinstance(other, datetime.timedelta):
+        return (period.end - period.start) % other
+
+    raise NotImplementedError()
+
+
+def truediv(period: PeriodProto, other: datetime.timedelta | int | float
+            ) -> datetime.timedelta | float:
+    if isinstance(other, (datetime.timedelta, int, float)):
+        return (period.end - period.start) / other
+
+    raise NotImplementedError()
+
+
+def xor(period, other):
+    raise NotImplementedError()
+
+
 # extras
 
 # TODO(d.burmistrov): naming - match?
