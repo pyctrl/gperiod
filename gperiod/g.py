@@ -205,11 +205,24 @@ def descend_end(*periods: PeriodProto, reverse: bool = False,
 
 
 def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
+    # types
     if not isinstance(start, datetime.datetime):
         raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
     elif not isinstance(end, datetime.datetime):
         raise TypeError(f"'{_F_END}' must be datetime: '{type(end)}'")
 
+    # timezones
+    start_offset = start.utcoffset()
+    end_offset = end.utcoffset()
+    if start_offset is None:
+        if end_offset is not None:
+            msg = f"Can't mix naive ({_F_START}) and aware ({_F_END}) edges"
+            raise ValueError(msg)
+    elif end_offset is None:
+        msg = f"Can't mix naive ({_F_END}) and aware ({_F_START}) edges"
+        raise ValueError(msg)
+
+    # values
     if start >= end:
         raise ValueError(f"'{_F_START}' must be '<' (before) '{_F_END}':"
                          f" '{start}' >= '{end}'")
