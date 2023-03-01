@@ -62,6 +62,17 @@ class Period(object):
             object.__setattr__(self, _F__DURATION, self.end - self.start)
             return getattr(self, _F__DURATION)
 
+    @classmethod
+    def from_edge(cls,
+                  edge: datetime.datetime,
+                  duration: datetime.timedelta,
+                  tail: bool = False,
+                  validate: bool = True,
+                  ) -> Period:
+        if tail:
+            return cls(edge - duration, edge, validate=validate)
+        return cls(edge, edge + duration, validate=validate)
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.start!r}, {self.end!r})"
 
