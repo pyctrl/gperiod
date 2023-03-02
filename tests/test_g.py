@@ -74,6 +74,24 @@ class PeriodBaseTestCase(TestCase):
         self.assertIs(result.end, FAKE_TS_02)
         self.assertIsInstance(result, g.Period)
 
+    def test_edge_start(self):
+        delta = FAKE_TS_02 - FAKE_TS_01
+
+        result = g.Period.from_edge(FAKE_TS_01, delta, tail=False)
+
+        self.assertEqual(result.start, FAKE_TS_01)
+        self.assertEqual(result.end, FAKE_TS_02)
+        self.assertIsInstance(result, g.Period)
+
+    def test_edge_end(self):
+        delta = FAKE_TS_02 - FAKE_TS_01
+
+        result = g.Period.from_edge(FAKE_TS_02, delta, tail=True)
+
+        self.assertEqual(result.start, FAKE_TS_01)
+        self.assertEqual(result.end, FAKE_TS_02)
+        self.assertIsInstance(result, g.Period)
+
     def test_modify(self):
         p = g.Period(FAKE_TS_05, FAKE_TS_10)
 
@@ -517,6 +535,15 @@ class ValidateFlatTestCase(TestCase):
             self.assertRaises(TypeError, g.validate_flat, FAKE_TS_10, 42)
             self.assertRaises(TypeError, g.validate_flat,
                               start=FAKE_TS_10, end=42)
+
+    def test_naive_aware(self):
+        aware = datetime.datetime.fromisoformat("2000-02-26T10:21:12+03:00")
+        naive = FAKE_TS_01
+
+        self.assertRaises(ValueError, g.validate_flat,
+                          aware, naive)
+        self.assertRaises(ValueError, g.validate_flat,
+                          naive, aware)
 
     def test_bad_direction(self):
         self.assertRaises(ValueError, g.validate_flat,
