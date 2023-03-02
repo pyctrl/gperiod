@@ -376,7 +376,7 @@ class PeriodRepresentationTestCase(TestCase):
         p = g.Period(FAKE_TS_05, FAKE_TS_10)
         expected = "2019-07-31//10:00:00//2020-01-27//10:00:00"
 
-        result = p.strftime("%Y-%m-%d//%H:%M:%S", separator="//")
+        result = p.strftime("%Y-%m-%d//%H:%M:%S", sep="//")
 
         self.assertEqual(result, expected)
 
@@ -532,7 +532,7 @@ class ValidateFlatTestCase(TestCase):
 
 class ValidatePeriodTestCase(TestCase):
 
-    @mock.patch("gperiod.g.validate_flat")
+    @mock.patch("gperiod.g.validate_flat", __name__="validate_flat")
     def test_validate(self, mock_flat):
         p = g.Period(FAKE_TS_05, FAKE_TS_15, False)
 

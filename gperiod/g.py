@@ -40,22 +40,43 @@ class PeriodProto(t.Protocol):
 
 # misc
 
-def to_timestamps(*periods: PeriodProto
+def to_timestamps(*periods: PeriodProto,
                   ) -> t.Generator[datetime.datetime, None, None]:
-    for p in periods:
-        yield p.start
-        yield p.end
+    """Flatten periods into sequence of edges
+
+    :param periods: period-like objects
+    """
+
+    for period in periods:
+        yield period.start
+        yield period.end
 
 
 # sorting
 
 def ascend_start(*periods: PeriodProto, reverse: bool = False,
                  ) -> list[PeriodProto]:
+    f"""Sort periods by '{_F_START}' attribute
+
+    Sorting is ascending by default.
+
+    :param periods: period-like objects
+    :param reverse: switch ascending to descending
+    """
+
     return sorted(periods, key=_sort_key_start, reverse=reverse)
 
 
 def descend_end(*periods: PeriodProto, reverse: bool = False,
                 ) -> list[PeriodProto]:
+    f"""Sort periods by '{_F_END}' attribute
+
+    Sorting is descending by default.
+
+    :param periods: period-like objects
+    :param reverse: switch descending to ascending
+    """
+
     return sorted(periods, key=_sort_key_end, reverse=(not reverse))
 
 
@@ -86,6 +107,13 @@ def validate_flat(start: datetime.datetime, end: datetime.datetime) -> None:
 
 
 def validate_period(period: PeriodProto) -> None:
+    f"""Validate period-like object
+
+    See `{validate_flat.__name__}` for details.
+
+    :param period: period-like object
+    """
+
     validate_flat(period.start, period.end)
 
 
@@ -328,17 +356,15 @@ def xor(period, other):
 
 # extras
 
-# TODO(d.burmistrov): naming - match?
-def equals(period: PeriodProto, other: PeriodProto, *others: PeriodProto
-           ) -> bool:
-    dts = {period.start, period.end}
-    if (other.start not in dts) or (other.end not in dts):
-        return False
-    for p in others:
-        if (p.start not in dts) or (p.end not in dts):
-            return False
-
-    return True
+def eq(period: PeriodProto, other: PeriodProto, *others: PeriodProto) -> bool:
+    result = period.start == other.start and period.end == other.end
+    if not result:
+        return result
+    for other in others:
+        result = period.start == other.start and period.end == other.end
+        if not result:
+            return result
+    return result
 
 
 # "p << delta"
@@ -361,6 +387,53 @@ def rshift(period: PeriodProto,
         return _conv(period.start + other, period.end + other, flat)
 
     raise NotImplementedError()
+
+
+# formatting
+
+# TODO(d.burmistrov): object class
+def fromisoformat(s: str) -> Period:
+    items = s.partition(_SEP)
+    return Period(datetime.datetime.fromisoformat(items[0]),
+                  datetime.datetime.fromisoformat(items[2]))
+
+
+def isoformat(obj: PeriodProto, sep="T", timespec="auto") -> str:
+    return (obj.start.isoformat(sep=sep, timespec=timespec)
+            + _SEP
+            + obj.end.isoformat(sep=sep, timespec=timespec))
+
+
+# TODO(d.burmistrov): object class
+def strptime(period_string: str, date_format: str, sep: str = _SEP) -> Period:
+    for i, j in zip(range(len(period_string)),
+                    range(len(sep), len(period_string))):
+        if period_string[slice(i, j)] != sep:
+            continue
+
+        try:
+            start = datetime.datetime.strptime(period_string[:i], date_format)
+            end = datetime.datetime.strptime(period_string[j:], date_format)
+        except ValueError:
+            continue
+        else:
+            return Period(start, end)
+
+    raise ValueError(f"period data '{period_string}' does not match"
+                     f" time format '{date_format}'"
+                     f" with separator '{sep}'")
+
+
+def strftime(obj: PeriodProto, date_fmt: str, sep: str = _SEP) -> str:
+    return obj.start.strftime(date_fmt) + sep + obj.end.strftime(date_fmt)
+
+
+def as_args(period: PeriodProto) -> _T_DT_PAIR:
+    return period.start, period.end
+
+
+def as_kwargs(period: PeriodProto) -> dict[str, datetime.datetime]:
+    return dict(start=period.start, end=period.end)
 
 
 # base entity
@@ -442,11 +515,7 @@ class Period(object):
         fromisoformat = datetime.datetime.fromisoformat
         return Period(fromisoformat(items[0]), fromisoformat(items[2]))
 
-    def isoformat(self, sep="T", timespec="auto") -> str:
-        return _SEP.join(
-            datetime.datetime.isoformat(item, sep=sep, timespec=timespec)
-            for item in (self.start, self.end)
-        )
+    isoformat = isoformat
 
     @classmethod
     def strptime(cls, period_string: str, date_format: str,
@@ -467,10 +536,7 @@ class Period(object):
                          f" time format '{date_format}'"
                          f" with separator '{separator}'")
 
-    def strftime(self, date_fmt: str, separator: str = _SEP) -> str:
-        return (self.start.strftime(date_fmt)
-                + separator
-                + self.end.strftime(date_fmt))
+    strftime = strftime
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.start!r}, {self.end!r})"
