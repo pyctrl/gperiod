@@ -120,7 +120,7 @@ def validate_period(period: PeriodProto) -> None:
 # ~set proto
 
 def _conv(start: datetime.datetime, end: datetime.datetime, flat: bool,
-          ) -> Period | tuple[datetime.datetime, datetime.datetime]:
+          ) -> Period | _T_DT_PAIR:
     return (start, end) if flat else Period(start, end, False)
 
 
@@ -144,15 +144,13 @@ def join(period: PeriodProto,
             if period.end != other.start:
                 return None
             period = other
-        result = (others[0].start, others[-1].end)
+        return _conv(others[0].start, others[-1].end, flat)
     elif period.end == other.start:  # `p1` on the left
-        result = (period.start, other.end)
+        return _conv(period.start, other.end, flat)
     elif period.start == other.end:  # `p1` on the right
-        result = (other.start, period.end)
+        return _conv(other.start, period.end, flat)
     else:
         return None
-
-    return result if flat else Period(*result, False)
 
 
 def union(period: PeriodProto,
@@ -171,13 +169,13 @@ def union(period: PeriodProto,
                 max_end = max(other.end, max_end)
             else:
                 return None
-        result = (others[0].start, max_end)
+        return _conv(others[0].start, max_end, flat)
     elif intersection(period, other, flat=True):
-        result = (min(period.start, other.start), max(period.end, other.end))
+        return _conv(min(period.start, other.start),
+                     max(period.end, other.end),
+                     flat)
     else:
         return join(period, other, flat=flat)
-
-    return result if flat else Period(*result, False)
 
 
 def intersection(period: PeriodProto,
@@ -304,9 +302,9 @@ def sub(period: PeriodProto,
 
     # TODO(d.burmistrov): extract this to `cut(period, other, *others, ...)`
     if period.start == other.start:
-        return Period(other.end, period.end)
+        return _conv(other.end, period.end, flat)
     elif period.end == other.end:
-        return Period(period.start, other.start)
+        return _conv(period.start, other.start, flat)
     else:
         raise ValueError()
 
@@ -392,10 +390,11 @@ def rshift(period: PeriodProto,
 # formatting
 
 # TODO(d.burmistrov): object class
-def fromisoformat(s: str) -> Period:
+def fromisoformat(s: str, flat: bool = False) -> Period | _T_DT_PAIR:
     items = s.partition(_SEP)
-    return Period(datetime.datetime.fromisoformat(items[0]),
-                  datetime.datetime.fromisoformat(items[2]))
+    return _conv(datetime.datetime.fromisoformat(items[0]),
+                 datetime.datetime.fromisoformat(items[2]),
+                 flat)
 
 
 def isoformat(obj: PeriodProto, sep="T", timespec="auto") -> str:
@@ -405,7 +404,9 @@ def isoformat(obj: PeriodProto, sep="T", timespec="auto") -> str:
 
 
 # TODO(d.burmistrov): object class
-def strptime(period_string: str, date_format: str, sep: str = _SEP) -> Period:
+def strptime(period_string: str, date_format: str,
+             sep: str = _SEP, flat: bool = False,
+             ) -> Period | _T_DT_PAIR:
     for i, j in zip(range(len(period_string)),
                     range(len(sep), len(period_string))):
         if period_string[slice(i, j)] != sep:
@@ -417,7 +418,7 @@ def strptime(period_string: str, date_format: str, sep: str = _SEP) -> Period:
         except ValueError:
             continue
         else:
-            return Period(start, end)
+            return _conv(start, end, flat)
 
     raise ValueError(f"period data '{period_string}' does not match"
                      f" time format '{date_format}'"
@@ -550,11 +551,8 @@ class Period(object):
     def copy(self) -> Period:
         return Period(self.start, self.end, False)
 
-    def as_tuple(self) -> tuple[datetime.datetime, datetime.datetime]:
-        return self.start, self.end
-
-    def as_kwargs(self) -> dict[str, datetime.datetime]:
-        return dict(start=self.start, end=self.end)
+    as_tuple = as_args
+    as_kwargs = as_kwargs
 
     def as_dict(self) -> dict[str, datetime.datetime | datetime.timedelta]:
         return dict(start=self.start, end=self.end, duration=self.duration)
