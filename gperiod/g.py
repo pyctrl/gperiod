@@ -15,6 +15,14 @@ _sort_key_start = operator.attrgetter(_F_START)
 _sort_key_end = operator.attrgetter(_F_END)
 
 
+def _jumping_sequence(length: int) -> t.Generator[int, None, None]:
+    middle, tail = divmod(length, 2)
+    for left, right in zip(range(middle - 1, -1, -1), range(middle, length)):
+        yield left
+        yield right
+    if tail:
+        yield length - 1
+
 # TODO(d.burmistrov):
 #  - [im]mutable
 #  - assert `start < end`
@@ -407,9 +415,11 @@ def isoformat(obj: PeriodProto, sep="T", timespec="auto") -> str:
 def strptime(period_string: str, date_format: str,
              sep: str = _SEP, flat: bool = False,
              ) -> Period | _T_DT_PAIR:
-    for i, j in zip(range(len(period_string)),
-                    range(len(sep), len(period_string))):
-        if period_string[slice(i, j)] != sep:
+    sep_len = len(sep)
+    jumper = _jumping_sequence(len(period_string) - sep_len + 1)
+    for i in jumper:
+        j = i + sep_len
+        if period_string[i:j] != sep:
             continue
 
         try:
@@ -420,9 +430,9 @@ def strptime(period_string: str, date_format: str,
         else:
             return _conv(start, end, flat)
 
-    raise ValueError(f"period data '{period_string}' does not match"
-                     f" time format '{date_format}'"
-                     f" with separator '{sep}'")
+    msg = (f"period data '{period_string}' does not match"
+           f" time format '{date_format}' with separator '{sep}'")
+    raise ValueError(msg)
 
 
 def strftime(obj: PeriodProto, date_fmt: str, sep: str = _SEP) -> str:
