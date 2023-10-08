@@ -77,7 +77,7 @@ class PeriodBaseTestCase(TestCase):
     def test_edge_start(self):
         delta = FAKE_TS_02 - FAKE_TS_01
 
-        result = g.Period.from_edge(FAKE_TS_01, delta, tail=False)
+        result = g.Period.from_edge(FAKE_TS_01, delta, end=False)
 
         self.assertEqual(result.start, FAKE_TS_01)
         self.assertEqual(result.end, FAKE_TS_02)
@@ -86,7 +86,7 @@ class PeriodBaseTestCase(TestCase):
     def test_edge_end(self):
         delta = FAKE_TS_02 - FAKE_TS_01
 
-        result = g.Period.from_edge(FAKE_TS_02, delta, tail=True)
+        result = g.Period.from_edge(FAKE_TS_02, delta, end=True)
 
         self.assertEqual(result.start, FAKE_TS_01)
         self.assertEqual(result.end, FAKE_TS_02)
@@ -163,21 +163,6 @@ class PeriodBaseTestCase(TestCase):
         for subtest, item in subtests.items():
             with self.subTest(subtest=subtest):
                 self.assertIn(item, p)
-
-
-class ConvTestCase(TestCase):
-
-    def test_flat_true(self):
-        result = g._conv(FAKE_TS_01, FAKE_TS_02, flat=True)
-        expected = (FAKE_TS_01, FAKE_TS_02)
-
-        self._assert_result_datetime_pair(result, expected)
-
-    def test_flat_false(self):
-        result = g._conv(FAKE_TS_01, FAKE_TS_02, flat=False)
-        expected = g.Period(FAKE_TS_01, FAKE_TS_02)
-
-        self._assert_result_period(result, expected)
 
 
 class PeriodOperationsTestCase(TestCase):
@@ -365,7 +350,7 @@ class PeriodRepresentationTestCase(TestCase):
         s = "2019-07-31//10:00:00//2020-01-27//10:00:00"
         expected = g.Period(FAKE_TS_05, FAKE_TS_10)
 
-        result = g.Period.strptime(s, "%Y-%m-%d//%H:%M:%S", separator="//")
+        result = g.Period.strptime(s, "%Y-%m-%d//%H:%M:%S", sep="//")
 
         self.assertEqual(result, expected)
 
@@ -484,7 +469,7 @@ class PeriodConvertTestCase(TestCase):
         self.assertRaises(TypeError, p.replace,
                           start=FAKE_TS_01, something=FAKE_TS_06)
         self.assertRaises(TypeError, p.replace,
-                          FAKE_TS_01, FAKE_TS_06, FAKE_TS_02)
+                          FAKE_TS_01, FAKE_TS_06, FAKE_TS_02, FAKE_TS_02)
 
 
 class XscendYTestCase(TestCase):
@@ -524,42 +509,42 @@ class XscendYTestCase(TestCase):
             self.assertEqual(result, expected[::-1])
 
 
-class ValidateFlatTestCase(TestCase):
+class ValidateEdgesTestCase(TestCase):
 
     def test_bad_type(self):
         with self.subTest(subtest="start"):
-            self.assertRaises(TypeError, g.validate_flat, 42, FAKE_TS_10)
-            self.assertRaises(TypeError, g.validate_flat,
+            self.assertRaises(TypeError, g.validate_edges, 42, FAKE_TS_10)
+            self.assertRaises(TypeError, g.validate_edges,
                               start=42, end=FAKE_TS_10)
         with self.subTest(subtest="end"):
-            self.assertRaises(TypeError, g.validate_flat, FAKE_TS_10, 42)
-            self.assertRaises(TypeError, g.validate_flat,
+            self.assertRaises(TypeError, g.validate_edges, FAKE_TS_10, 42)
+            self.assertRaises(TypeError, g.validate_edges,
                               start=FAKE_TS_10, end=42)
 
     def test_naive_aware(self):
         aware = datetime.datetime.fromisoformat("2000-02-26T10:21:12+03:00")
         naive = FAKE_TS_01
 
-        self.assertRaises(ValueError, g.validate_flat,
+        self.assertRaises(ValueError, g.validate_edges,
                           aware, naive)
-        self.assertRaises(ValueError, g.validate_flat,
+        self.assertRaises(ValueError, g.validate_edges,
                           naive, aware)
 
     def test_bad_direction(self):
-        self.assertRaises(ValueError, g.validate_flat,
+        self.assertRaises(ValueError, g.validate_edges,
                           FAKE_TS_10, FAKE_TS_02)
 
     def test_bad_duration(self):
-        self.assertRaises(ValueError, g.validate_flat,
+        self.assertRaises(ValueError, g.validate_edges,
                           FAKE_TS_10, FAKE_TS_10)
 
     def test_ok(self):
-        g.validate_flat(FAKE_TS_05, FAKE_TS_10)
+        g.validate_edges(FAKE_TS_05, FAKE_TS_10)
 
 
 class ValidatePeriodTestCase(TestCase):
 
-    @mock.patch("gperiod.g.validate_flat", __name__="validate_flat")
+    @mock.patch("gperiod.g.validate_edges", __name__="validate_edges")
     def test_validate(self, mock_flat):
         p = g.Period(FAKE_TS_05, FAKE_TS_15, False)
 
@@ -616,9 +601,9 @@ class JoinTestCase(TestCase):
         p = g.Period(FAKE_TS_01, FAKE_TS_02)
 
         self.assertRaises(TypeError, g.join)
-        self.assertRaises(TypeError, g.join, flat=True)
+        self.assertRaises(TypeError, g.join, factory=g.Tuple)
         self.assertRaises(TypeError, g.join, p)
-        self.assertRaises(TypeError, g.join, p, flat=True)
+        self.assertRaises(TypeError, g.join, p, factory=g.Tuple)
 
     def test_joined(self):
         p1 = g.Period(FAKE_TS_01, FAKE_TS_02)
@@ -628,7 +613,7 @@ class JoinTestCase(TestCase):
         expected = g.Period(FAKE_TS_01, FAKE_TS_10)
 
         result_p = g.join(p2, p4, p3, p1)
-        result_dt = g.join(p2, p4, p3, p1, flat=True)
+        result_dt = g.join(p2, p4, p3, p1, factory=g.Tuple)
 
         self._assert_result_period(result_p, expected)
         self._assert_result_datetime_pair(result_dt, expected.as_tuple())
@@ -652,7 +637,7 @@ class JoinTestCase(TestCase):
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
                 self.assertIsNone(g.join(*periods))
-                self.assertIsNone(g.join(*periods, flat=True))
+                self.assertIsNone(g.join(*periods, factory=g.Tuple))
 
 
 class UnionTestCase(TestCase):
@@ -661,9 +646,9 @@ class UnionTestCase(TestCase):
         p = g.Period(FAKE_TS_01, FAKE_TS_02)
 
         self.assertRaises(TypeError, g.union)
-        self.assertRaises(TypeError, g.union, flat=True)
+        self.assertRaises(TypeError, g.union, factory=g.Tuple)
         self.assertRaises(TypeError, g.union, p)
-        self.assertRaises(TypeError, g.union, p, flat=True)
+        self.assertRaises(TypeError, g.union, p, factory=g.Tuple)
 
     def test_empty(self):
         p1 = g.Period(FAKE_TS_01, FAKE_TS_02)
@@ -684,7 +669,7 @@ class UnionTestCase(TestCase):
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
                 self.assertIsNone(g.union(*periods))
-                self.assertIsNone(g.union(*periods, flat=True))
+                self.assertIsNone(g.union(*periods, factory=g.Tuple))
 
     def test_succeeded(self):
         p1a = g.Period(FAKE_TS_01, FAKE_TS_03)
@@ -719,7 +704,7 @@ class UnionTestCase(TestCase):
             with self.subTest(subtest=subtest):
                 self._assert_result_period(g.union(*periods), expected)
                 self._assert_result_datetime_pair(
-                    g.union(*periods, flat=True),
+                    g.union(*periods, factory=g.Tuple),
                     expected.as_tuple(),
                 )
 
@@ -730,9 +715,9 @@ class IntersectionTestCase(TestCase):
         p = g.Period(FAKE_TS_01, FAKE_TS_02)
 
         self.assertRaises(TypeError, g.intersection)
-        self.assertRaises(TypeError, g.intersection, flat=True)
+        self.assertRaises(TypeError, g.intersection, factory=g.Tuple)
         self.assertRaises(TypeError, g.intersection, p)
-        self.assertRaises(TypeError, g.intersection, p, flat=True)
+        self.assertRaises(TypeError, g.intersection, p, factory=g.Tuple)
 
     def test_empty(self):
         p1 = g.Period(FAKE_TS_01, FAKE_TS_08)
@@ -753,7 +738,7 @@ class IntersectionTestCase(TestCase):
         for subtest, periods in subtests.items():
             with self.subTest(subtest=subtest):
                 self.assertIsNone(g.intersection(*periods))
-                self.assertIsNone(g.intersection(*periods, flat=True))
+                self.assertIsNone(g.intersection(*periods, factory=g.Tuple))
 
     def test_succeeded(self):
         p1 = g.Period(FAKE_TS_01, FAKE_TS_08)
@@ -786,7 +771,7 @@ class IntersectionTestCase(TestCase):
                     expected,
                 )
                 self._assert_result_datetime_pair(
-                    g.intersection(*periods, flat=True),
+                    g.intersection(*periods, factory=g.Tuple),
                     expected.as_tuple(),
                 )
 
@@ -826,9 +811,9 @@ class DifferenceTestCase(TestCase):
         p = g.Period(FAKE_TS_01, FAKE_TS_02)
 
         self.assertRaises(TypeError, g.difference)
-        self.assertRaises(TypeError, g.difference, flat=True)
+        self.assertRaises(TypeError, g.difference, factory=g.Tuple)
         self.assertRaises(TypeError, g.difference, p)
-        self.assertRaises(TypeError, g.difference, p, flat=True)
+        self.assertRaises(TypeError, g.difference, p, factory=g.Tuple)
 
     def test_no_dif(self):
         p = g.Period(FAKE_TS_08, FAKE_TS_16)
@@ -852,7 +837,7 @@ class DifferenceTestCase(TestCase):
                     self._assert_result_period,
                 )
                 self._assert_generator(
-                    g.difference(p, *periods, flat=True),
+                    g.difference(p, *periods, factory=g.Tuple),
                     expected,
                     self._assert_result_datetime_pair,
                 )
@@ -900,7 +885,7 @@ class DifferenceTestCase(TestCase):
                     self._assert_result_period,
                 )
                 self._assert_generator(
-                    g.difference(p, *periods, flat=True),
+                    g.difference(p, *periods, factory=g.Tuple),
                     [exp.as_tuple() for exp in expected],
                     self._assert_result_datetime_pair,
                 )
@@ -957,7 +942,7 @@ class DifferenceTestCase(TestCase):
                     self._assert_result_period,
                 )
                 self._assert_generator(
-                    g.difference(p, *periods, flat=True),
+                    g.difference(p, *periods, factory=g.Tuple),
                     [exp.as_tuple() for exp in expected],
                     self._assert_result_datetime_pair,
                 )
