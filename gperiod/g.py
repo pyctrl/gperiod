@@ -214,6 +214,7 @@ class Period:
                         factory=cls)
 
 # TODO(d.burmistrov):
+#  - NEGATIVE TIMEDELTAS
 #  - timezone support
 #  - wrap errors (in all validate funcs)?
 #  - review exceptions
@@ -221,7 +222,6 @@ class Period:
 #  - do performance tests
 #  - docstrings
 #  - readme.rst
-#  - read the docs (+examples)
 #  - ensure pickling
 
 
@@ -448,17 +448,18 @@ def add(period: PeriodProto,
         other: PeriodProto | timedelta,
         factory: _T_FACTORY = Period,
         ) -> _T_FACTORY_RESULT_OPT:
-    if isinstance(other, timedelta):
-        if not other.total_seconds():
-            return factory(period.start, period.end)
-        elif other.total_seconds() > 0:
-            return factory(period.start, period.end + other)
-        else:
-            end = period.end + other
-            validate_edges(period.start, end)
-            return factory(period.start, end)
+    if not isinstance(other, timedelta):
+        return join(period, other, factory=factory)
 
-    return join(period, other, factory=factory)
+    secs = other.total_seconds()
+    if not secs:
+        return factory(period.start, period.end)
+    elif secs > 0:
+        return factory(period.start, period.end + other)
+    else:
+        end = period.end + other
+        validate_edges(period.start, end)
+        return factory(period.start, end)
 # TODO(d.burmistrov): decorator to raise on None result & add wrapped API funcs
 
 
@@ -497,25 +498,25 @@ contains = is_within
 
 def floordiv(period: PeriodProto, other: timedelta | int,
              ) -> timedelta | int:
-    if isinstance(other, (timedelta, int)):
-        return (period.end - period.start) // other
+    if not isinstance(other, (timedelta, int)):
+        raise NotImplementedError()
 
-    raise NotImplementedError()
+    return (period.end - period.start) // other
 
 
 def mod(period: PeriodProto, other: timedelta) -> timedelta:
-    if isinstance(other, timedelta):
-        return (period.end - period.start) % other
+    if not isinstance(other, timedelta):
+        raise NotImplementedError()
 
-    raise NotImplementedError()
+    return (period.end - period.start) % other
 
 
 def truediv(period: PeriodProto, other: timedelta | int | float,
             ) -> timedelta | float:
-    if isinstance(other, (timedelta, int, float)):
-        return (period.end - period.start) / other
+    if not isinstance(other, (timedelta, int, float)):
+        raise NotImplementedError()
 
-    raise NotImplementedError()
+    return (period.end - period.start) / other
 
 
 def xor(period: PeriodProto,
@@ -529,7 +530,12 @@ def xor(period: PeriodProto,
 # extras
 
 def eq(period: PeriodProto, other: PeriodProto, *others: PeriodProto) -> bool:
-    result = period.start == other.start and period.end == other.end
+    """Compare periods for equality
+
+    To be equal all periods have to have same starts and ends
+    """
+
+    result = ((period.start == other.start) and (period.end == other.end))
     if not result:
         return result
     for other in others:
@@ -539,36 +545,40 @@ def eq(period: PeriodProto, other: PeriodProto, *others: PeriodProto) -> bool:
     return result
 
 
-# "p << delta"
 def lshift(period: PeriodProto,
-           other: timedelta,
+           delta: timedelta,
            factory: _T_FACTORY = Period,
            ) -> _T_FACTORY_RESULT:
-    if isinstance(other, timedelta):
-        return factory(period.start - other, period.end - other)
+    """Shift left right by timedelta (p << delta)"""
 
-    raise NotImplementedError()
+    if not isinstance(delta, timedelta):
+        raise NotImplementedError()
+
+    return factory(period.start - delta, period.end - delta)
 
 
-# "p >> delta"
 def rshift(period: PeriodProto,
-           other: timedelta,
+           delta: timedelta,
            factory: _T_FACTORY = Period,
            ) -> _T_FACTORY_RESULT:
-    if isinstance(other, timedelta):
-        return factory(period.start + other, period.end + other)
+    """Shift period right by timedelta (p >> delta)"""
 
-    raise NotImplementedError()
+    if not isinstance(delta, timedelta):
+        raise NotImplementedError()
+
+    return factory(period.start + delta, period.end + delta)
 
 
 # formatting
 
+# TODO(d.burmistrov): jumping search + check ISO spec for sep alphabets
 def fromisoformat(s: str, sep: str = _SEP, factory: _T_FACTORY = Period):
     conv = datetime.fromisoformat
     start, _, end = s.partition(sep)
     return factory(conv(start), conv(end))
 
 
+# TODO(d.burmistrov): check ISO spec for sep alphabets
 def isoformat(obj: PeriodProto,
               dt_sep=_DT_SEP,
               timespec=_TIMESPEC,
@@ -578,7 +588,6 @@ def isoformat(obj: PeriodProto,
     return f"{conv(obj.start)}{sep}{conv(obj.end)}"
 
 
-# TODO(d.burmistrov): object class
 def strptime(period_string: str,
              date_format: str,
              sep: str = _SEP,
