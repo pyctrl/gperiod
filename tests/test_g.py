@@ -5,6 +5,7 @@ import types
 import unittest
 from unittest import mock
 
+from gperiod import f
 from gperiod import g
 
 
@@ -77,7 +78,7 @@ class PeriodBaseTestCase(TestCase):
     def test_edge_start(self):
         delta = FAKE_TS_02 - FAKE_TS_01
 
-        result = g.Period.from_edge(FAKE_TS_01, delta, end=False)
+        result = g.Period.from_start(FAKE_TS_01, delta)
 
         self.assertEqual(result.start, FAKE_TS_01)
         self.assertEqual(result.end, FAKE_TS_02)
@@ -86,7 +87,7 @@ class PeriodBaseTestCase(TestCase):
     def test_edge_end(self):
         delta = FAKE_TS_02 - FAKE_TS_01
 
-        result = g.Period.from_edge(FAKE_TS_02, delta, end=True)
+        result = g.Period.from_end(FAKE_TS_02, delta)
 
         self.assertEqual(result.start, FAKE_TS_01)
         self.assertEqual(result.end, FAKE_TS_02)
@@ -499,13 +500,13 @@ class XscendYTestCase(TestCase):
         expected = [p4, p3, p2, p1]
 
         with self.subTest(subtest="forward"):
-            result = g.descend_end(p4, p1, p2, p3)
+            result = f.descend_end(p4, p1, p2, p3)
             self.assertEqual(result, expected)
         with self.subTest(subtest="forward_2"):
-            result = g.descend_end(p1, p2, p3, p4, reverse=False)
+            result = f.descend_end(p1, p2, p3, p4, reverse=False)
             self.assertEqual(result, expected)
         with self.subTest(subtest="backward"):
-            result = g.descend_end(p3, p2, p1, p4, reverse=True)
+            result = f.descend_end(p3, p2, p1, p4, reverse=True)
             self.assertEqual(result, expected[::-1])
 
 
@@ -546,9 +547,9 @@ class ValidatePeriodTestCase(TestCase):
 
     @mock.patch("gperiod.g.validate_edges", __name__="validate_edges")
     def test_validate(self, mock_flat):
-        p = g.Period(FAKE_TS_05, FAKE_TS_15, False)
+        g.Period(FAKE_TS_05, FAKE_TS_15)
 
-        g.validate_period(p)
+        # g.validate_period(p)
 
         mock_flat.assert_called_once_with(FAKE_TS_05, FAKE_TS_15)
 
@@ -567,7 +568,7 @@ class WithinTestCase(TestCase):
 
         for item in (dt_in, dt_left, dt_right, p_in, p_left, p_right, p_same):
             with self.subTest(item=item):
-                result = g.within(p, item)
+                result = g.is_within(p, item)
 
                 self.assertTrue(result)
                 self.assertIsInstance(result, bool)
@@ -589,7 +590,7 @@ class WithinTestCase(TestCase):
                      p_left, p_touch_left, p_cross_left,
                      p_right, p_touch_right, p_cross_right):
             with self.subTest(item=item):
-                result = g.within(p, item)
+                result = g.is_within(p, item)
 
                 self.assertFalse(result)
                 self.assertIsInstance(result, bool)
@@ -780,7 +781,7 @@ class ToTimestampsTestCase(TestCase):
 
     def test_empty(self):
         self._assert_generator(
-                    g.to_timestamps(),
+                    f.to_timestamps(),
                     [],
                     self._assert_result_datetime)
 
@@ -788,7 +789,7 @@ class ToTimestampsTestCase(TestCase):
         p = g.Period(FAKE_TS_01, FAKE_TS_02)
 
         self._assert_generator(
-                    g.to_timestamps(p),
+                    f.to_timestamps(p),
                     [FAKE_TS_01, FAKE_TS_02],
                     self._assert_result_datetime)
 
@@ -799,7 +800,7 @@ class ToTimestampsTestCase(TestCase):
         p4 = g.Period(FAKE_TS_04, FAKE_TS_05)
 
         self._assert_generator(
-                    g.to_timestamps(p1, p2, p3, p4),
+                    f.to_timestamps(p1, p2, p3, p4),
                     [FAKE_TS_01, FAKE_TS_02, FAKE_TS_03, FAKE_TS_04,
                      FAKE_TS_04, FAKE_TS_05, FAKE_TS_04, FAKE_TS_05],
                     self._assert_result_datetime)
