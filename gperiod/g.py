@@ -142,7 +142,7 @@ class Period:
         return self.start, self.end
 
     def as_tuple(self):  # TOD
-        return as_args(self)
+        return as_tuple(self)
 
     def as_kwargs(self) -> dict[str, datetime]:
         """Return a dictionary of edges"""
@@ -185,7 +185,7 @@ class Period:
         return rshift(self, other, factory=self.__class__)
 
     def __contains__(self, item):
-        return is_within(self, item)
+        return contains(self, item)
 
     def isoformat(self,
                   dt_sep=_DT_SEP,
@@ -292,7 +292,7 @@ def validate_period(period: PeriodProto) -> None:
 
 # ~set proto
 
-def is_within(period: PeriodProto, item: datetime | PeriodProto) -> bool:
+def contains(period: PeriodProto, item: datetime | PeriodProto) -> bool:
     """Report whether period contains another period or timestamp
 
     :param period: period-like object
@@ -336,7 +336,7 @@ def union(period: PeriodProto,
         period = others[0]
         max_end = period.end
         for other in others[1:]:
-            if is_within(period, other.start):
+            if contains(period, other.start):
                 period = other
                 max_end = max(other.end, max_end)
             else:
@@ -484,16 +484,16 @@ def sub(period: PeriodProto,
 # I.  "p * number"
 def mul(period: PeriodProto, factor: int | float, factory: _T_FACTORY = Period,
         ) -> _T_FACTORY_RESULT_OPT:
-    if factor <= 0:
+    if factor == 0:
         return None
 
-    start = period.start
-    return factory(start, start + ((period.end - start) * factor))
-
-
-and_ = intersection
-or_ = union
-contains = is_within
+    duration = period.end - period.start
+    if factor > 0:
+        end = period.start + (duration * factor)
+        return factory(period.start, end)
+    else:
+        start = period.start - (duration * -factor)
+        return factory(start, period.end)
 
 
 def floordiv(period: PeriodProto, other: timedelta | int,
@@ -528,6 +528,10 @@ def xor(period: PeriodProto,
 
 
 # extras
+
+and_ = intersection
+or_ = union
+
 
 def eq(period: PeriodProto, other: PeriodProto, *others: PeriodProto) -> bool:
     """Compare periods for equality
@@ -639,13 +643,13 @@ def strftime(obj: PeriodProto, date_fmt: str, sep: str = _SEP) -> str:
     return f"{obj.start.strftime(date_fmt)}{sep}{obj.end.strftime(date_fmt)}"
 
 
-def as_args(period: PeriodProto) -> _T_DT_PAIR:
+def as_tuple(period: PeriodProto) -> _T_DT_PAIR:
     """Return a tuple of edges"""
 
     return period.start, period.end
 
 
-def as_kwargs(period: PeriodProto) -> dict[str, datetime]:
+def as_dict(period: PeriodProto) -> dict[str, datetime]:
     """Return a dictionary of edges"""
 
     return dict(start=period.start, end=period.end)

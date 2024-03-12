@@ -568,7 +568,7 @@ class WithinTestCase(TestCase):
 
         for item in (dt_in, dt_left, dt_right, p_in, p_left, p_right, p_same):
             with self.subTest(item=item):
-                result = g.is_within(p, item)
+                result = g.contains(p, item)
 
                 self.assertTrue(result)
                 self.assertIsInstance(result, bool)
@@ -590,7 +590,7 @@ class WithinTestCase(TestCase):
                      p_left, p_touch_left, p_cross_left,
                      p_right, p_touch_right, p_cross_right):
             with self.subTest(item=item):
-                result = g.is_within(p, item)
+                result = g.contains(p, item)
 
                 self.assertFalse(result)
                 self.assertIsInstance(result, bool)
