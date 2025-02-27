@@ -229,7 +229,7 @@ class Period:
 
 def ascend_start(*periods: PeriodProto,
                  reverse: bool = False,
-                 ) -> list[PeriodProto]:
+                 ) -> t.List[PeriodProto]:
     f"""Sort periods by '{_F_START}' attribute
 
     Sorting is ascending by default.
