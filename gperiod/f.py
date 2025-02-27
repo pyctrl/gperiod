@@ -11,7 +11,7 @@ _SORT_KEY_END = operator.attrgetter(g._F_END)
 # sorting
 
 def descend_end(*periods: g.PeriodProto, reverse: bool = False,
-                ) -> list[g.PeriodProto]:
+                ) -> t.List[g.PeriodProto]:
     f"""Sort periods by '{g._F_END}' attribute
 
     Sorting is descending by default.
