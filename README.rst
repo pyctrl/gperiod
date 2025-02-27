@@ -48,7 +48,7 @@ Versioning
 
 `SemVer <http://semver.org/>`__ used for versioning.
 For available versions see the repository
-`tags <https://github.com/pyctrl/gperiod/tags`__
+`tags <https://github.com/pyctrl/gperiod/tags>`__
 and `releases <https://github.com/pyctrl/gperiod/releases>`__.
 
 
