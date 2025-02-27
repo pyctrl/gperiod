@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dtm
 import operator
 import typing as t
 
@@ -26,7 +26,7 @@ def descend_end(*periods: g.PeriodProto, reverse: bool = False,
 # misc
 
 def to_timestamps(*periods: g.PeriodProto,
-                  ) -> t.Generator[datetime, None, None]:
+                  ) -> t.Generator[dtm.datetime, None, None]:
     """Flatten periods into sequence of edges
 
     :param periods: period-like objects

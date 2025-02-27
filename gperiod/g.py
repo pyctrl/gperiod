@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta  # noqa: H301
+import contextlib
+import datetime as dtm
 import functools
 import operator
 import typing as t
@@ -17,6 +18,14 @@ _TIMESPEC = "auto"
 _SORT_KEY_START = operator.attrgetter(_F_START)
 
 
+def _now(tz: dtm.timezone = dtm.UTC) -> dtm.datetime:
+    return dtm.datetime.now(tz=tz)
+
+
+def utcnow() -> dtm.datetime:
+    return dtm.datetime.now(tz=dtm.UTC)
+
+
 def _jumping_sequence(length: int) -> t.Generator[int, None, None]:
     middle, tail = divmod(length, 2)
     for left, right in zip(range(middle - 1, -1, -1),
@@ -27,48 +36,48 @@ def _jumping_sequence(length: int) -> t.Generator[int, None, None]:
         yield length - 1
 
 
-def Tuple(start: datetime, end: datetime) -> _T_DT_PAIR:
+def Tuple(start: dtm.datetime, end: dtm.datetime) -> _T_DT_PAIR:
     return start, end
 
 
 class PeriodProto(t.Protocol):
-    start: datetime
-    end: datetime
+    start: dtm.datetime
+    end: dtm.datetime
 
 
-_T_DT_PAIR = t.Tuple[datetime, datetime]
+_T_DT_PAIR = t.Tuple[dtm.datetime, dtm.datetime]
 
-_T_FACTORY = t.Callable[[datetime, datetime], t.Any]
-_T_FACTORY_RESULT = t.Union[PeriodProto, t.Tuple[datetime, datetime]]
-_T_FACTORY_RESULT_OPT = t.Union[PeriodProto, t.Tuple[datetime, datetime], None]
+_T_FACTORY = t.Callable[[dtm.datetime, dtm.datetime], t.Any]
+_T_FACTORY_RESULT = t.Union[PeriodProto, t.Tuple[dtm.datetime, dtm.datetime]]
+_T_FACTORY_RESULT_OPT = t.Union[PeriodProto, t.Tuple[dtm.datetime, dtm.datetime], None]
 
 
 class Period:
 
-    start: datetime
-    end: datetime
+    start: dtm.datetime
+    end: dtm.datetime
 
     __slots__ = (_F_START, _F_END, _F__DURATION)
 
-    def __init__(self, start: datetime, end: datetime):
+    def __init__(self, start: dtm.datetime, end: dtm.datetime):
         validate_edges(start, end)
         object.__setattr__(self, _F_START, start)
         object.__setattr__(self, _F_END, end)
 
-    def __set_duration(self) -> timedelta:
+    def __set_duration(self) -> dtm.timedelta:
         duration = self.end - self.start
         object.__setattr__(self, _F__DURATION, duration)
         return duration
 
     @property
-    def duration(self) -> timedelta:
+    def duration(self) -> dtm.timedelta:
         try:
             return getattr(self, _F__DURATION)
         except AttributeError:
             return self.__set_duration()
 
     @classmethod
-    def load_edges(cls, start: datetime, end: datetime) -> Period:
+    def load_edges(cls, start: dtm.datetime, end: dtm.datetime) -> Period:
         """Unsafe load Period from edges without edge validation"""
         inst = cls.__new__(cls)
         object.__setattr__(inst, _F_START, start)
@@ -76,16 +85,22 @@ class Period:
         return inst
 
     @classmethod
-    def from_start(cls, start: datetime, duration: timedelta) -> Period:
+    def from_start(cls, start: dtm.datetime, duration: dtm.timedelta) -> Period:
         """Make a Period from start and duration"""
 
         return cls(start, start + duration)
 
     @classmethod
-    def from_end(cls, end: datetime, duration: timedelta) -> Period:
+    def from_end(cls, end: dtm.datetime, duration: dtm.timedelta) -> Period:
         """Make a Period from end and duration"""
 
         return cls(end - duration, end)
+
+    @classmethod
+    def record(cls, start: dtm.datetime) -> Period:
+        """Make a Period from start and now()"""
+
+        return cls(start, _now(tz=t.cast(dtm.timezone, start.tzinfo)))
 
     def __setattr__(self, key: str, value: t.Any) -> None:
         raise NotImplementedError("method not allowed")
@@ -121,8 +136,8 @@ class Period:
         return memo[self]
 
     def replace(self,
-                start: t.Optional[datetime] = None,
-                end: t.Optional[datetime] = None,
+                start: t.Optional[dtm.datetime] = None,
+                end: t.Optional[dtm.datetime] = None,
                 ) -> Period:
         """Return Period with new specified fields."""
 
@@ -144,12 +159,12 @@ class Period:
     def as_tuple(self):  # TOD
         return as_tuple(self)
 
-    def as_kwargs(self) -> dict[str, datetime]:
+    def as_kwargs(self) -> dict[str, dtm.datetime]:
         """Return a dictionary of edges"""
 
         return dict(start=self.start, end=self.end)
 
-    def as_dict(self) -> dict[str, datetime | timedelta]:
+    def as_dict(self) -> dict[str, dtm.datetime | dtm.timedelta]:
         """Return a dictionary of edges and durations"""
 
         return dict(start=self.start, end=self.end, duration=self.duration)
@@ -243,7 +258,7 @@ def ascend_start(*periods: PeriodProto,
 
 # validation
 
-def validate_edges(start: datetime, end: datetime) -> None:
+def validate_edges(start: dtm.datetime, end: dtm.datetime) -> None:
     f"""Validate period edges
 
     Exception will be raised for invalid data.
@@ -256,9 +271,9 @@ def validate_edges(start: datetime, end: datetime) -> None:
     """
 
     # types
-    if not isinstance(start, datetime):
+    if not isinstance(start, dtm.datetime):
         raise TypeError(f"'{_F_START}' must be datetime: '{type(start)}'")
-    elif not isinstance(end, datetime):
+    elif not isinstance(end, dtm.datetime):
         raise TypeError(f"'{_F_END}' must be datetime: '{type(end)}'")
 
     # timezones
@@ -292,14 +307,14 @@ def validate_period(period: PeriodProto) -> None:
 
 # ~set proto
 
-def contains(period: PeriodProto, item: datetime | PeriodProto) -> bool:
+def contains(period: PeriodProto, item: dtm.datetime | PeriodProto) -> bool:
     """Report whether period contains another period or timestamp
 
     :param period: period-like object
     :param item: timestamp or period-like object
     """
 
-    if isinstance(item, datetime):
+    if isinstance(item, dtm.datetime):
         return period.start <= item <= period.end
 
     return (period.start <= item.start) and (item.end <= period.end)
@@ -445,10 +460,10 @@ def difference(period: PeriodProto,
 # I.  "p + timedelta"
 # II. "p1 + p2"
 def add(period: PeriodProto,
-        other: PeriodProto | timedelta,
+        other: PeriodProto | dtm.timedelta,
         factory: _T_FACTORY = Period,
         ) -> _T_FACTORY_RESULT_OPT:
-    if not isinstance(other, timedelta):
+    if not isinstance(other, dtm.timedelta):
         return join(period, other, factory=factory)
 
     secs = other.total_seconds()
@@ -466,10 +481,10 @@ def add(period: PeriodProto,
 # I.  "p - timedelta"
 # II. "p1 - p2"
 def sub(period: PeriodProto,
-        other: PeriodProto | timedelta,
+        other: PeriodProto | dtm.timedelta,
         factory: _T_FACTORY = Period,
         ) -> _T_FACTORY_RESULT_OPT:
-    if isinstance(other, timedelta):
+    if isinstance(other, dtm.timedelta):
         return add(period, -other, factory=factory)
 
     # TODO(d.burmistrov): extract this to `cut(period, other, *others, ...)`
@@ -496,24 +511,24 @@ def mul(period: PeriodProto, factor: int | float, factory: _T_FACTORY = Period,
         return factory(start, period.end)
 
 
-def floordiv(period: PeriodProto, other: timedelta | int,
-             ) -> timedelta | int:
-    if not isinstance(other, (timedelta, int)):
+def floordiv(period: PeriodProto, other: dtm.timedelta | int,
+             ) -> dtm.timedelta | int:
+    if not isinstance(other, (dtm.timedelta, int)):
         raise NotImplementedError()
 
     return (period.end - period.start) // other
 
 
-def mod(period: PeriodProto, other: timedelta) -> timedelta:
-    if not isinstance(other, timedelta):
+def mod(period: PeriodProto, other: dtm.timedelta) -> dtm.timedelta:
+    if not isinstance(other, dtm.timedelta):
         raise NotImplementedError()
 
     return (period.end - period.start) % other
 
 
-def truediv(period: PeriodProto, other: timedelta | int | float,
-            ) -> timedelta | float:
-    if not isinstance(other, (timedelta, int, float)):
+def truediv(period: PeriodProto, other: dtm.timedelta | int | float,
+            ) -> dtm.timedelta | float:
+    if not isinstance(other, (dtm.timedelta, int, float)):
         raise NotImplementedError()
 
     return (period.end - period.start) / other
@@ -550,24 +565,24 @@ def eq(period: PeriodProto, other: PeriodProto, *others: PeriodProto) -> bool:
 
 
 def lshift(period: PeriodProto,
-           delta: timedelta,
+           delta: dtm.timedelta,
            factory: _T_FACTORY = Period,
            ) -> _T_FACTORY_RESULT:
     """Shift left right by timedelta (p << delta)"""
 
-    if not isinstance(delta, timedelta):
+    if not isinstance(delta, dtm.timedelta):
         raise NotImplementedError()
 
     return factory(period.start - delta, period.end - delta)
 
 
 def rshift(period: PeriodProto,
-           delta: timedelta,
+           delta: dtm.timedelta,
            factory: _T_FACTORY = Period,
            ) -> _T_FACTORY_RESULT:
     """Shift period right by timedelta (p >> delta)"""
 
-    if not isinstance(delta, timedelta):
+    if not isinstance(delta, dtm.timedelta):
         raise NotImplementedError()
 
     return factory(period.start + delta, period.end + delta)
@@ -577,7 +592,7 @@ def rshift(period: PeriodProto,
 
 # TODO(d.burmistrov): jumping search + check ISO spec for sep alphabets
 def fromisoformat(s: str, sep: str = _SEP, factory: _T_FACTORY = Period):
-    conv = datetime.fromisoformat
+    conv = dtm.datetime.fromisoformat
     start, _, end = s.partition(sep)
     return factory(conv(start), conv(end))
 
@@ -587,7 +602,7 @@ def isoformat(obj: PeriodProto,
               dt_sep=_DT_SEP,
               timespec=_TIMESPEC,
               sep: str = _SEP) -> str:
-    conv = functools.partial(datetime.isoformat,
+    conv = functools.partial(dtm.datetime.isoformat,
                              sep=dt_sep, timespec=timespec)
     return f"{conv(obj.start)}{sep}{conv(obj.end)}"
 
@@ -616,8 +631,8 @@ def strptime(period_string: str,
             continue
 
         try:
-            start = datetime.strptime(period_string[:i], date_format)
-            end = datetime.strptime(period_string[j:], date_format)
+            start = dtm.datetime.strptime(period_string[:i], date_format)
+            end = dtm.datetime.strptime(period_string[j:], date_format)
         except ValueError:
             continue
         else:
@@ -649,7 +664,17 @@ def as_tuple(period: PeriodProto) -> _T_DT_PAIR:
     return period.start, period.end
 
 
-def as_dict(period: PeriodProto) -> dict[str, datetime]:
+def as_dict(period: PeriodProto) -> dict[str, dtm.datetime]:
     """Return a dictionary of edges"""
 
     return dict(start=period.start, end=period.end)
+
+
+@contextlib.contextmanager
+def timer():
+    box = [utcnow()]
+    try:
+        yield box
+    finally:
+        box.append(utcnow())
+        box.append(Period.load_edges(*box))
