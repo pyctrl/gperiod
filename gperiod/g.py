@@ -36,11 +36,11 @@ class PeriodProto(t.Protocol):
     end: datetime
 
 
-_T_DT_PAIR = tuple[datetime, datetime]
+_T_DT_PAIR = t.Tuple[datetime, datetime]
 
 _T_FACTORY = t.Callable[[datetime, datetime], t.Any]
-_T_FACTORY_RESULT = t.Union[PeriodProto, tuple[datetime, datetime]]
-_T_FACTORY_RESULT_OPT = t.Union[PeriodProto, tuple[datetime, datetime], None]
+_T_FACTORY_RESULT = t.Union[PeriodProto, t.Tuple[datetime, datetime]]
+_T_FACTORY_RESULT_OPT = t.Union[PeriodProto, t.Tuple[datetime, datetime], None]
 
 
 class Period:
